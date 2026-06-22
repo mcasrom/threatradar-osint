@@ -26,20 +26,20 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     setIsDetecting(true);
     if (!quiet) addLog('Iniciando handshake con servidores de resolución de IP públicos...');
     try {
-      const res = await fetch('https://ipapi.co/json/');
+      const res = await fetch('http://ip-api.com/json/');
       if (!res.ok) throw new Error('Respuesta del servidor de geolocalización no válida.');
       const data = await res.json();
       
-      if (data && data.ip) {
-        setCustomIp(data.ip);
+      if (data && data.query) {
+        setCustomIp(data.query);
         setResolvedGeo(data);
         if (!quiet) {
-          addLog(`¡Exito! IP Detectada: ${data.ip} (${data.org || 'ISP Desconocido'})`);
-          addLog(`Ubicación: ${data.city}, ${data.country_name} [${data.latitude}, ${data.longitude}]`);
+          addLog(`¡Exito! IP Detectada: ${data.query} (${data.org || 'ISP Desconocido'})`);
+          addLog(`Ubicación: ${data.city}, ${data.country} [${data.lat}, ${data.lon}]`);
         }
         setStatusMessage({
           type: 'success',
-          text: `IP autodetectada y geolocalizada: ${data.ip} (${data.country_name})`
+          text: `IP autodetectada y geolocalizada: ${data.query} (${data.country})`
         });
       } else {
         throw new Error('Formato de datos devuelto no soportado');
@@ -78,12 +78,12 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
 
     try {
       // Fetch geodata for specified IP
-      const res = await fetch(`https://ipapi.co/${customIp}/json/`);
+      const res = await fetch(`http://ip-api.com/json/${customIp}`);
       const data = await res.json();
 
-      if (data && !data.error && data.latitude !== undefined) {
+      if (data && data.status === "success" && data.lat !== undefined) {
         setResolvedGeo(data);
-        addLog(`IP resuelta para: ${data.country_name || 'Desconocido'}. Lat: ${data.latitude}, Lng: ${data.longitude}`);
+        addLog(`IP resuelta para: ${data.country || 'Desconocido'}. Lat: ${data.lat}, Lng: ${data.lon}`);
         
         // Trigger high-fidelity threat alert originating from resolved IP targeting Central SOC
         const injectedAlert: ThreatAlert = {
@@ -93,20 +93,20 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           destinationIp: '185.112.144.15', // Europe SOC
           sourcePort: Math.floor(Math.random() * 45000) + 12000,
           destinationPort: 443,
-          country: data.country_name || 'Origen de Prueba',
+          country: data.country || 'Origen de Prueba',
           countryCode: data.country_code || 'TS',
           severity: 'CRITICAL',
           attackType: 'Handshake Táctico OSINT (Prueba de Usuario)',
-          payload: `Inyección de sonda manual desde IP del operador militar. Geodatos: Lat=${data.latitude} Lng=${data.longitude}. Proveedor: ${data.org || 'Local ISP'}`,
-          latitude: Number(data.latitude),
-          longitude: Number(data.longitude),
+          payload: `Inyección de sonda manual desde IP del operador militar. Geodatos: Lat=${data.lat} Lng=${data.lon}. Proveedor: ${data.org || 'Local ISP'}`,
+          latitude: Number(data.lat),
+          longitude: Number(data.lon),
           intensity: 100
         };
 
         onTriggerAlert(injectedAlert);
         setStatusMessage({
           type: 'success',
-          text: `¡Firma de red inyectada! Rastree el arco luminoso desde ${data.country_name} hasta Europa SOC.`
+          text: `¡Firma de red inyectada! Rastree el arco luminoso desde ${data.country} hasta Europa SOC.`
         });
         addLog('Vector cargado con éxito en el mapa geográfico.');
       } else {
