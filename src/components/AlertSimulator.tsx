@@ -66,6 +66,17 @@ export const AlertSimulator: React.FC<SimulatorProps> = ({ onTriggerAlert }) => 
       lat: 40.4168,
       lng: -3.7038,
       intensity: 40
+    },
+    {
+      attackType: 'Botnet C2 Beacon Detection',
+      severity: 'HIGH' as const,
+      payload: 'Mirai variant heartbeat detected - C2 callback interval 30s',
+      country: 'Australia',
+      countryCode: 'AU',
+      port: 4444,
+      lat: -33.8688,
+      lng: 151.2093,
+      intensity: 75
     }
   ];
 
