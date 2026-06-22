@@ -566,6 +566,27 @@ app.get('/api/osint/hunter/:domain', async (req, res) => {
   }
 });
 
+app.get('/api/osint/ip-full/:ip', async (req, res) => {
+  const ip = sanitizeTarget(req.params.ip);
+  if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP address' });
+  const results: any = { ip, timestamp: new Date().toISOString(), shodan: null, abuseipdb: null, virustotal: null };
+  await Promise.all([
+    process.env.SHODAN_API_KEY
+      ? fetch(`https://api.shodan.io/shodan/host/${ip}?key=${process.env.SHODAN_API_KEY}`)
+          .then(r => r.json()).then(d => { results.shodan = d; }).catch(e => { results.shodan = { error: e.message }; })
+      : Promise.resolve(),
+    process.env.ABUSEIPDB_API_KEY
+      ? fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, { headers: { 'Key': process.env.ABUSEIPDB_API_KEY, 'Accept': 'application/json' } })
+          .then(r => r.json()).then(d => { results.abuseipdb = d; }).catch(e => { results.abuseipdb = { error: e.message }; })
+      : Promise.resolve(),
+    process.env.VIRUSTOTAL_API_KEY
+      ? fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, { headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY } })
+          .then(r => r.json()).then(d => { results.virustotal = d; }).catch(e => { results.virustotal = { error: e.message }; })
+      : Promise.resolve(),
+  ]);
+  res.json(results);
+});
+
 // Vite Middleware
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
