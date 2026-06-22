@@ -372,3 +372,22 @@
 - [ ] Conectar /api/osint/ip-full a IPTesterAndManual.tsx (UI datos reales)
 - [ ] Auth JWT
 - [ ] Migrar JSON DB a SQLite
+
+---
+
+## 🔄 Sprint 0 — Sesión 2 — 22 Junio 2026
+
+### Lo que hicimos:
+- [x] Endpoint `/api/osint/ip-full/:ip` — Shodan+AbuseIPDB+VirusTotal en paralelo (Promise.all)
+- [x] Endpoint `/api/osint/hunter/:domain` añadido
+- [x] Migrado geolocalización de `ipapi.co` (caído) a `ip-api.com` (funcional)
+- [x] Corregidos campos geo: `lat/lon/country/query` en IPTesterAndManual.tsx
+- [x] Añadido Australia/Brisbane/Sydney como vector de ataque en AlertSimulator
+- [x] Verificadas 4 APIs con datos reales: Shodan, AbuseIPDB, VirusTotal, Hunter.io
+
+### Pendiente Sprint 1 (próxima sesión):
+- [ ] Conectar /api/osint/ip-full a UI para mostrar datos reales en scan
+- [ ] Auth JWT (registro/login/middleware)
+- [ ] Migrar JSON DB a SQLite/PostgreSQL
+- [ ] Feature gating por plan (free/pro/enterprise)
+- [ ] Stripe en producción
