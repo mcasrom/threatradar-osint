@@ -357,3 +357,18 @@
 ---
 
 *Documento vivo - actualizar al final de cada sprint*
+
+---
+
+## ✅ Sprint 0 COMPLETADO — 22 Junio 2026
+
+### Lo que hicimos hoy:
+- [x] Verificadas 4 APIs OSINT con datos reales: Shodan, AbuseIPDB, VirusTotal, Hunter.io
+- [x] Añadido endpoint `/api/osint/hunter/:domain` (no existía)
+- [x] Añadido endpoint `/api/osint/ip-full/:ip` — Shodan+AbuseIPDB+VirusTotal en paralelo (Promise.all, ~900ms)
+- [x] Servidor corriendo en puerto 3000 con Gemini + SMTP configurados
+
+### Próximo — Sprint 1:
+- [ ] Conectar /api/osint/ip-full a IPTesterAndManual.tsx (UI datos reales)
+- [ ] Auth JWT
+- [ ] Migrar JSON DB a SQLite
