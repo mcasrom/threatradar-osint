@@ -1,0 +1,8 @@
+{
+  "name": "ThreatRadar OSINT",
+  "description": "Estación de visualización defensiva cibernética e inteligencia de fuente abierta (OSINT) que monitorea e intercepta tráfico global en tiempo real.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

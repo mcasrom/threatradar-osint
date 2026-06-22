@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-brand-bg: #05070a;
+  --color-brand-panel: #0f172a;
+  --color-brand-header: #0b121f;
+  --color-brand-border: #1e293b;
+  --color-brand-cyan: #00f2ff;
+  --color-brand-green: #39ff14;
+  --color-brand-red: #ff3131;
+  --color-brand-yellow: #fbbf24;
+}
+
+/* Custom Tactical Cyber animations */
+@keyframes cyber-dash {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes radar-scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+.animate-cyber-dash {
+  stroke-dasharray: 8, 4;
+  animation: cyber-dash 1.5s linear infinite;
+}
+
+.animate-radar-scan {
+  animation: radar-scan 6s linear infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+
