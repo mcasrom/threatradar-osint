@@ -552,6 +552,20 @@ app.get('/api/osint/hibp/:email', async (req, res) => {
   }
 });
 
+app.get('/api/osint/hunter/:domain', async (req, res) => {
+  const apiKey = process.env.HUNTER_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'Hunter API key not configured' });
+  const domain = req.params.domain.replace(/[^a-zA-Z0-9.-]/g, '');
+  if (!domain || !domain.includes('.')) return res.status(400).json({ error: 'Invalid domain' });
+  try {
+    const response = await fetch(`https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${apiKey}`);
+    const data = await response.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Vite Middleware
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
