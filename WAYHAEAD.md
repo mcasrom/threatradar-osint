@@ -436,3 +436,22 @@
 - [ ] Stripe en producción (conectar plan pro/enterprise al checkout)
 - [ ] Migrar JSON DB a SQLite
 - [ ] Frontend: login/register UI
+
+---
+
+## ✅ Manual de Usuario — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] Manual actualizado a v2.0 con APIs reales, endpoints, planes y seguridad
+- [x] Eliminadas referencias a datos simulados
+
+## 🔄 Sprint 3 — PENDIENTE
+
+### Objetivo: cerrar el ciclo SaaS completo
+
+### Plan:
+1. [ ] Proteger endpoints OSINT restantes con authMiddleware
+2. [ ] Stripe en producción (conectar plan pro/enterprise al checkout)
+3. [ ] Migrar JSON DB a SQLite (mejor concurrencia y persistencia)
+4. [ ] Login/register UI en el frontend
+5. [ ] Dashboard de usuario (plan, scans usados, upgrade button)
