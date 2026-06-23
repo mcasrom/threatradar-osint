@@ -11,6 +11,13 @@
 - 3 commits pusheados a mcasrom/threatradar-osint
 
 ---
+## ✅ Completado hoy (continuación sesión 23 Jun)
+- Conectado /api/osint/ip-full a IPTesterAndManual.tsx — card OSINT real con Shodan/AbuseIPDB/VT/GreyNoise/IPInfo
+- AbuseIPDB y VirusTotal devuelven datos reales confirmados (test 8.8.8.8)
+- Usuario dev pro creado: dev@threatradar.local / DevRadar2026! / plan=pro
+- .env.example documentado con todas las variables (sin valores reales)
+- GREYNOISE_API_KEY tiene valor incorrecto — pendiente corregir
+
 ## 🔄 Sprint 9 — Frontend real (próximo)
 4. Conectar /api/osint/ip-full a IPTesterAndManual.tsx (datos reales en UI)
 5. Dashboard usuario: plan actual, scans usados, upgrade visible

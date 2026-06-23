@@ -14,8 +14,13 @@
     - Fix bug /api/auth/register: plan ignorado → ahora registerUser(email, password, plan)
     - Test register con plan=pro → devuelve plan=pro correctamente
     - Rebuild Docker exitoso tras fix
+*** También completado esta sesión
+    - Card OSINT real en IPTesterAndManual.tsx con 5 fuentes (Shodan/AbuseIPDB/VT/GreyNoise/IPInfo)
+    - AbuseIPDB y VirusTotal confirmados con datos reales (8.8.8.8)
+    - Usuario dev pro: dev@threatradar.local / DevRadar2026! (plan=pro en SQLite)
+    - .env.example creado con todas las variables documentadas
 *** Pendiente inmediato
-    - Sprint 9: conectar /api/osint/ip-full a IPTesterAndManual.tsx
+    - Sprint 9: dashboard usuario con plan/scans/upgrade
     - Sprint 9: dashboard usuario con plan/scans/upgrade
 *** Notas técnicas
     - docker-compose 1.29.2 tiene bug ContainerConfig → usar down+up en lugar de up --build
