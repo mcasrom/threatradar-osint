@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThreatAlert } from '../types';
-import { Maximize2, Minimize2, MapPin, Eye, Compass, Film, ShieldAlert, FileText, Download, Activity } from 'lucide-react';
+import { Maximize2, Minimize2, MapPin, Eye, Compass, ShieldAlert, FileText, Download, Activity } from 'lucide-react';
 
 interface GeoMapProps {
   alerts: ThreatAlert[];
@@ -9,8 +9,6 @@ interface GeoMapProps {
 }
 
 export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAlert, onHoverAlert }) => {
-  const [isExportingVideo, setIsExportingVideo] = useState(false);
-  const [exportCompleteUrl, setExportCompleteUrl] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('GLOBAL');
   const [viewHeatmap, setViewHeatmap] = useState<boolean>(true);
   const [selectedAlertForInspection, setSelectedAlertForInspection] = useState<ThreatAlert | null>(null);
@@ -39,14 +37,6 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
     };
   };
 
-  const handleExportYouTubeClip = () => {
-    setIsExportingVideo(true);
-    setExportCompleteUrl(null);
-    setTimeout(() => {
-      setIsExportingVideo(false);
-      setExportCompleteUrl(`https://youtube.com/shorts/simulated-threatradar-osint-${Date.now()}`);
-    }, 3800);
-  };
 
   return (
     <div id="geographical-vector-map-panel" className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 shadow-xl relative overflow-hidden">
@@ -75,14 +65,6 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
             {viewHeatmap ? '🔥 Capa de Calor: ON' : '⚫ Capa de Calor: OFF'}
           </button>
 
-          <button
-            onClick={handleExportYouTubeClip}
-            disabled={isExportingVideo}
-            className="text-[10px] font-sans font-bold bg-brand-red hover:opacity-90 text-white px-3 py-1 rounded flex items-center gap-1.5 transition active:scale-95 shadow-lg shadow-brand-red/10"
-          >
-            <Film size={12} />
-            {isExportingVideo ? 'Renderizando Clip...' : 'Export YouTube'}
-          </button>
         </div>
       </div>
 
@@ -454,22 +436,6 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
         </div>
       </div>
 
-      {exportCompleteUrl && (
-        <div className="p-4 bg-brand-red/10 border border-brand-red/30 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fade-in">
-          <div>
-            <span className="text-xs font-bold text-brand-red font-sans block">🎬 Clip de Amenaza Renderizado Exitosamente</span>
-            <span className="text-[10px] text-zinc-400 font-mono block">Video optimizado de 15 segundos listo para publicar sobre actividad global.</span>
-          </div>
-          <a
-            href={exportCompleteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white bg-brand-red hover:opacity-90 font-sans font-bold text-xs px-4 py-2 rounded transition active:scale-95 shadow-md shadow-brand-red/20 text-center"
-          >
-            Subir a YouTube
-          </a>
-        </div>
-      )}
     </div>
   );
 };

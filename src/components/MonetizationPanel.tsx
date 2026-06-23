@@ -30,7 +30,6 @@ export const MonetizationPanel: React.FC = () => {
       description: 'La experiencia completa con IA para análisis profundos de superficie de ataque Shodan.',
       benefits: [
         'Análisis ilimitado Gemini 3.5',
-        'Exportador de Clips YouTube',
         'Secuencias automatizadas a correo/webhooks',
         'Simulador completo de inyección',
         'Descarga de la Guía de Usuario'
