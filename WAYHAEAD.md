@@ -538,3 +538,9 @@
 - [ ] Tests básicos Jest (register, login, ip-full, usage)
 - [ ] Deploy producción (Docker + Nginx)
 - [ ] Página de precios pública /pricing
+
+---
+
+## ✅ Footer mailto — 23 Junio 2026
+- [x] Email pie de página convertido a mailto link
+
