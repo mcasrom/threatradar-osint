@@ -489,3 +489,17 @@
 - [ ] Dashboard de usuario (plan, scans usados, upgrade button)
 - [ ] GreyNoise endpoint (cuando esté la key)
 - [ ] Tests básicos (Jest)
+
+---
+
+## ✅ Sprint 4 — Auth UI — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] AuthPanel.tsx — login, registro, dashboard, upgrade button
+- [x] Muestra plan, scans usados, botón upgrade a Pro
+
+### Pendiente próxima sesión:
+- [ ] Integrar AuthPanel en App.tsx (header o sidebar)
+- [ ] GreyNoise endpoint
+- [ ] Tests básicos Jest
+- [ ] Deploy producción
