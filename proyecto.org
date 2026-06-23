@@ -17,7 +17,7 @@
 *** También completado esta sesión
     - Card OSINT real en IPTesterAndManual.tsx con 5 fuentes (Shodan/AbuseIPDB/VT/GreyNoise/IPInfo)
     - AbuseIPDB y VirusTotal confirmados con datos reales (8.8.8.8)
-    - Usuario dev pro: dev@threatradar.local / DevRadar2026! (plan=pro en SQLite)
+    - Usuario dev pro: dev@threatradar.local (credenciales en .env.local.secret)
     - .env.example creado con todas las variables documentadas
 *** Pendiente inmediato
     - Sprint 9: dashboard usuario con plan/scans/upgrade
