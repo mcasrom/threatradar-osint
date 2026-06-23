@@ -594,3 +594,13 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 - [ ] Deploy Docker producción
 - [ ] Página /pricing pública
 - [ ] Arreglar error ipapi.co en logs frontend
+
+---
+
+## 🔄 Sprint 8 — PENDIENTE
+
+### Plan:
+- [ ] Deploy Docker producción
+- [ ] Página /pricing pública
+- [ ] Arreglar error ipapi.co en logs frontend
+- [ ] Testear generación de informes IA (Gemini)
