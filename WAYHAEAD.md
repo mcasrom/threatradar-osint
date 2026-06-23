@@ -391,3 +391,11 @@
 - [ ] Migrar JSON DB a SQLite/PostgreSQL
 - [ ] Feature gating por plan (free/pro/enterprise)
 - [ ] Stripe en producción
+
+---
+
+## ✅ Sprint 1 — Auth JWT — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] src/auth.ts — registerUser, loginUser, generateToken, authMiddleware
+- [x] POST
