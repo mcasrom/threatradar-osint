@@ -62,30 +62,50 @@ export default function App() {
 
   const handlePremiumManualDownload = () => {
     setDownloadSuccess(true);
-    const docText = `THREATRADAR OSINT - MANUAL DEL USUARIO
+    const docText = `THREATRADAR OSINT v2.0 - MANUAL DEL USUARIO
 ======================================================
 Generado: ${new Date().toLocaleDateString()}
+Version: 2.0 | Estado: Produccion
 
-1. INTRODUCCIÓN
-ThreatRadar OSINT opera como panel visual integrado para administradores de sistemas y analistas SOC.
+1. INTRODUCCION
+ThreatRadar OSINT es una plataforma de inteligencia de amenazas en tiempo real
+con APIs OSINT reales, auth JWT, planes de uso y mapa geografico de amenazas.
 
-2. MÓDULOS OSINT
-- Nmap Port Scanner: Escaneo de puertos y servicios
-- DNS Reconnaissance: Mapeo de subdominios y registros
-- theHarvester: Recolección de emails y subdominios
-- WHOIS Lookup: Consulta de registros de dominios
-- SSL/TLS Scanner: Análisis de configuración SSL
-- Nikto Web Scanner: Vulnerabilidades web
-- Subfinder: Descubrimiento de subdominios
-- Nuclei: Escaneo de vulnerabilidades por templates
-- OWASP Amass: Mapeo de superficie de ataque
-- Shodan CLI: Información de dispositivos expuestos
+2. APIS OSINT INTEGRADAS (DATOS REALES)
+- Shodan:     Dispositivos expuestos, puertos, servicios, vulnerabilidades
+- AbuseIPDB:  Score de abuso, reportes, historial de IPs maliciosas
+- VirusTotal: Reputacion, detecciones de motores AV
+- Hunter.io:  Descubrimiento de emails por dominio
+- ip-api.com: Geolocalizacion precisa de IPs
 
-3. MOTOR IA
-Integración con Google Gemini para generación de informes tácticos y chat interactivo.
+3. ENDPOINTS API
+- POST /api/auth/register        Registro de usuario
+- POST /api/auth/login           Login, devuelve JWT 7 dias
+- GET  /api/auth/me              Perfil autenticado
+- GET  /api/user/usage           Scans usados vs limite del plan
+- GET  /api/osint/ip-full/:ip    Scan completo (Shodan+AbuseIPDB+VT)
+- GET  /api/osint/shodan/:ip     Datos Shodan
+- GET  /api/osint/abuseipdb/:ip  Score de abuso
+- GET  /api/osint/virustotal/:ip Reputacion VirusTotal
+- GET  /api/osint/hunter/:domain Emails de un dominio
 
-4. DESPACHO AUTOMÁTICO
-Reportes programados con envío por email y webhooks.`;
+4. PLANES Y LIMITES
+- Free:       10 scans/mes | Shodan + AbuseIPDB
+- Pro:        Ilimitado    | Todas las fuentes OSINT
+- Enterprise: Ilimitado    | Todo + prioridad + webhooks
+
+5. MODULOS OSINT TERMINAL
+Nmap, DNS Recon, theHarvester, WHOIS, SSL Scanner,
+Nikto, Subfinder, Nuclei, OWASP Amass, Shodan CLI
+
+6. MOTOR IA
+Google Gemini para analisis de amenazas, informes tacticos y chat interactivo.
+
+7. SEGURIDAD
+JWT auth, rate limiting, Helmet, CORS, inputs sanitizados.
+
+8. DESPACHO AUTOMATICO
+Reportes programados por email (SMTP) y webhooks.`;
 
     const blob = new Blob([docText], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
