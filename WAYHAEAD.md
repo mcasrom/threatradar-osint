@@ -579,3 +579,18 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 ### Lo que hicimos:
 - [x] MonetizationPanel conectado con JWT token para checkout Stripe
 - [x] Email input
+
+---
+
+## ✅ Sprint 7 — Smoke Tests — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] smoke_test.sh — 13 tests automatizados
+- [x] 13/13 passing — todos los endpoints verificados
+- [x] Shodan con parsing defensivo (text→JSON)
+- [x] Shodan usa 1.1.1.1 (8.8.8.8 no tiene datos en Shodan)
+
+### Próximo Sprint 8:
+- [ ] Deploy Docker producción
+- [ ] Página /pricing pública
+- [ ] Arreglar error ipapi.co en logs frontend
