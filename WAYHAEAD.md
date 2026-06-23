@@ -544,3 +544,21 @@
 ## ✅ Footer mailto — 23 Junio 2026
 - [x] Email pie de página convertido a mailto link
 
+
+---
+
+## ✅ Sprint 5 — GreyNoise + IPInfo — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] /api/osint/greynoise/:ip — clasificación noise/riot/scanner
+- [x] /api/osint/ipinfo/:ip — geolocalización avanzada, ASN, org
+- [x] Ambas integradas en /api/osint/ip-full (6 fuentes en paralelo)
+- [x] Verificado: 5/6 fuentes respondiendo en 1.6s
+
+### APIs activas totales: 6
+Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
+
+### Próximo Sprint 6:
+- [ ] Tests Jest básicos
+- [ ] Deploy producción Docker
+- [ ] Página /pricing pública
