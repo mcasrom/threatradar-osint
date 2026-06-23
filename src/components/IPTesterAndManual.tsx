@@ -29,20 +29,20 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     setIsDetecting(true);
     if (!quiet) addLog('Iniciando handshake con servidores de resolución de IP públicos...');
     try {
-      const res = await fetch('http://ip-api.com/json/');
+      const res = await fetch('/api/geoip/');
       if (!res.ok) throw new Error('Respuesta del servidor de geolocalización no válida.');
       const data = await res.json();
       
-      if (data && data.query) {
-        setCustomIp(data.query);
+      if (data && data.ip) {
+        setCustomIp(data.ip);
         setResolvedGeo(data);
         if (!quiet) {
-          addLog(`¡Exito! IP Detectada: ${data.query} (${data.org || 'ISP Desconocido'})`);
-          addLog(`Ubicación: ${data.city}, ${data.country} [${data.lat}, ${data.lon}]`);
+          addLog(`¡Exito! IP Detectada: ${data.ip} (${data.org || 'ISP Desconocido'})`);
+          addLog(`Ubicación: ${data.city}, ${data.country} [${data.latitude}, ${data.longitude}]`);
         }
         setStatusMessage({
           type: 'success',
-          text: `IP autodetectada y geolocalizada: ${data.query} (${data.country})`
+          text: `IP autodetectada y geolocalizada: ${data.ip} (${data.country})`
         });
       } else {
         throw new Error('Formato de datos devuelto no soportado');
@@ -81,18 +81,18 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
 
     try {
       // Fetch geodata for specified IP
-      const res = await fetch(`http://ip-api.com/json/${customIp}`);
+      const res = await fetch(`/api/geoip/${customIp}`);
       const data = await res.json();
 
-      if (data && data.status === "success" && data.lat !== undefined) {
+      if (data && data.ip && data.latitudeitude !== undefined) {
         setResolvedGeo(data);
-        addLog(`IP resuelta para: ${data.country || 'Desconocido'}. Lat: ${data.lat}, Lng: ${data.lon}`);
+        addLog(`IP resuelta para: ${data.country || 'Desconocido'}. Lat: ${data.latitude}, Lng: ${data.longitude}`);
         
         // Trigger high-fidelity threat alert originating from resolved IP targeting Central SOC
         const injectedAlert: ThreatAlert = {
           id: `ALT-USER-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString(),
-          sourceIp: data.ip || customIp,
+          sourceIp: data.query || customIp,
           destinationIp: '185.112.144.15', // Europe SOC
           sourcePort: Math.floor(Math.random() * 45000) + 12000,
           destinationPort: 443,
@@ -100,9 +100,9 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           countryCode: data.country_code || 'TS',
           severity: 'CRITICAL',
           attackType: 'Handshake Táctico OSINT (Prueba de Usuario)',
-          payload: `Inyección de sonda manual desde IP del operador militar. Geodatos: Lat=${data.lat} Lng=${data.lon}. Proveedor: ${data.org || 'Local ISP'}`,
-          latitude: Number(data.lat),
-          longitude: Number(data.lon),
+          payload: `Inyección de sonda manual desde IP del operador militar. Geodatos: Lat=${data.latitude} Lng=${data.longitude}. Proveedor: ${data.org || 'Local ISP'}`,
+          latitude: Number(data.latitude),
+          longitude: Number(data.longitude),
           intensity: 100
         };
 

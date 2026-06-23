@@ -9,6 +9,7 @@ import { MonetizationPanel } from './components/MonetizationPanel';
 import { FAQs, About, Methodology, Sources } from './components/StaticInfo';
 import { AuthPanel } from './components/AuthPanel';
 import { PricingPage } from './components/PricingPage';
+import { UserDashboard } from './components/UserDashboard';
 import { ThreatAlert } from './types';
 import {
   Shield,
@@ -30,7 +31,7 @@ import {
 export default function App() {
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
-  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard'>('monitor');
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<any>(null);
@@ -197,6 +198,14 @@ Reportes programados por email (SMTP) y webhooks.`;
             <FileSpreadsheet size={14} /> Monetización Stripe
           </button>
           <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-3 py-1.5 rounded text-[11px] font-sans transition ${
+              activeTab === 'dashboard' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
+            }`}
+          >
+            Mi Cuenta
+          </button>
+          <button
             onClick={() => setActiveTab('pricing')}
             className={`flex-1 py-2 px-3 text-xs font-sans font-semibold rounded-md transition flex justify-center items-center gap-2 ${
               activeTab === 'pricing' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
@@ -306,6 +315,7 @@ Reportes programados por email (SMTP) y webhooks.`;
           {activeTab === 'billing' && <MonetizationPanel />}
 
           {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('billing')} />}
+          {activeTab === 'dashboard' && <UserDashboard onNavigateToPricing={() => setActiveTab('pricing')} />}
 
           {activeTab === 'docs' && (
             <div className="space-y-6">

@@ -45,3 +45,22 @@
     - DB: better-sqlite3 para users, JSON flat file para modules/reports
     - Build: vite build + esbuild → dist/server.cjs
     - Deploy: Docker (node:20-alpine, multistage)
+
+** Notas técnicas de desarrollo
+   :PROPERTIES:
+   :DATE: 2026-06-23
+   :END:
+*** Workflow recomendado
+    - Desarrollo activo: ~npm run dev~ (hot-reload, errores TS en tiempo real, ciclo 1s)
+    - Docker: solo para smoke tests finales y producción
+    - Credenciales dev: ver .env.local.secret (nunca en git)
+    - Build Docker tarda ~13s — no usar para iterar UI
+*** Comandos clave
+    - ~npm run dev~ — dev server local (Vite + Express, puerto 3000)
+    - ~docker-compose down && docker-compose up -d --build~ — rebuild producción
+    - ~docker-compose logs --tail=50~ — ver logs contenedor
+    - ~git add X && git commit -m "msg" && git push~ — deploy docs/código
+*** Variables de entorno
+    - .env — keys reales (en .gitignore, nunca a GitHub)
+    - .env.example — plantilla sin valores (sí en git)
+    - .env.local.secret — credenciales dev usuario (en .gitignore)

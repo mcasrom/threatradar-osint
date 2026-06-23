@@ -12,6 +12,13 @@
 
 ---
 ## ✅ Completado hoy (continuación sesión 23 Jun)
+- UserDashboard.tsx creado: plan actual, scans usados, fuentes OSINT disponibles, botón upgrade
+- Tab "Mi Cuenta" integrada en App.tsx
+- Fix CSP: añadidos http://ip-api.com, ws://localhost:24678 a connect-src
+- Script seed dev user documentado (.env.local.secret)
+- Workflow dev confirmado: npm run dev + sqlite3 para gestión usuarios
+
+## ✅ Completado hoy (continuación sesión 23 Jun)
 - Conectado /api/osint/ip-full a IPTesterAndManual.tsx — card OSINT real con Shodan/AbuseIPDB/VT/GreyNoise/IPInfo
 - AbuseIPDB y VirusTotal devuelven datos reales confirmados (test 8.8.8.8)
 - Usuario dev pro creado: dev@threatradar.local (ver .env.local.secret)

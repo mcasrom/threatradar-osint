@@ -40,9 +40,11 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://ipapi.co", "https://api.ipify.org"],
+      connectSrc: ["'self'", "https://api.ipify.org", "http://ip-api.com", "https://ip-api.com", "ws://localhost:24678", "wss://localhost:24678"],
     },
   },
+  hsts: false,
+  upgradeInsecureRequests: false,
 }));
 
 app.use(cors({
@@ -451,6 +453,18 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), asyn
 });
 
 // 9. External API integrations (proxied through server for security)
+
+app.get('/api/geoip/:ip?', async (req, res) => {
+  const ip = req.params.ip || '';
+  const url = ip ? `http://ip-api.com/json/${ip}` : 'http://ip-api.com/json/';
+  try {
+    const r = await fetch(url);
+    const data = await r.json();
+    res.json(data);
+  } catch (err: any) {
+    res.status(503).json({ error: 'GeoIP lookup failed', detail: err.message });
+  }
+});
 
 app.post('/api/auth/register', async (req, res) => {
   const { email, password, plan } = req.body;
