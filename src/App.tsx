@@ -7,6 +7,7 @@ import { PremiumAIChat } from './components/PremiumAIChat';
 import { AutoReportsManager } from './components/AutoReportsManager';
 import { MonetizationPanel } from './components/MonetizationPanel';
 import { FAQs, About, Methodology, Sources } from './components/StaticInfo';
+import { AuthPanel } from './components/AuthPanel';
 import { ThreatAlert } from './types';
 import {
   Shield,
@@ -147,6 +148,7 @@ Reportes programados por email (SMTP) y webhooks.`;
             <span>MÓDULOS: <strong className="text-brand-cyan font-bold">{serverStatus?.modulesCount || 0}</strong></span>
           </div>
         </div>
+        <AuthPanel />
       </header>
 
       {/* Main Content */}
