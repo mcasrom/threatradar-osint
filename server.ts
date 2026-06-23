@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { registerUser, loginUser, generateToken, authMiddleware, planMiddleware } from './src/auth';
+import { getUserById, getScanCount } from './src/sqlite';
 
 const execAsync = promisify(exec);
 
@@ -510,14 +511,14 @@ app.get('/api/auth/me', authMiddleware, (req: any, res) => {
 });
 
 app.get('/api/user/usage', authMiddleware, (req: any, res) => {
-  const db = readDB();
-  const user = db.users.find((u: any) => u.id === req.user.id);
+  const user = getUserById(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
   const now = new Date();
   const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-  const used = user.scanCount?.[monthKey] || 0;
-  const limits = { free: 10, pro: -1, enterprise: -1 };
-  const limit = limits[user.plan as keyof typeof limits] ?? 10;
+  const scanCount = getScanCount(user.id);
+  const used = scanCount[monthKey] || 0;
+  const limits: any = { free: 10, pro: -1, enterprise: -1 };
+  const limit = limits[user.plan] ?? 10;
   res.json({ email: user.email, plan: user.plan, scansUsed: used, scansLimit: limit, month: monthKey });
 });
 app.get('/api/osint/shodan/:ip', authMiddleware, async (req, res) => {
