@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThreatAlert } from '../types';
-import { Globe, MapPin, Terminal, HelpCircle, ArrowRight, CheckCircle2, ShieldAlert, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
+import { Globe, MapPin, Terminal, HelpCircle, ArrowRight, CheckCircle2, ShieldAlert, BookOpen, AlertCircle, RefreshCw, Zap } from 'lucide-react';
 
 interface IPTesterProps {
   onTriggerAlert: (alert: ThreatAlert) => void;
@@ -15,6 +15,9 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
   const [osintResult, setOsintResult] = useState<any>(null);
   const [osintLoading, setOsintLoading] = useState(false);
   const [osintError, setOsintError] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Auto-detect IP on mount
   useEffect(() => {
@@ -168,6 +171,50 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
       onTriggerAlert(injectedAlert);
     } finally {
       setIsDetecting(false);
+    }
+  };
+
+  const handleAiAnalysis = async () => {
+    if (!osintResult) return;
+    const token = localStorage.getItem('tr_token');
+    if (!token) { setAiError('Debes iniciar sesión.'); return; }
+    setAiLoading(true);
+    setAiAnalysis(null);
+    setAiError(null);
+    try {
+      // Truncar payload para evitar limite de tokens en Groq
+      const trimmedData = {
+        ip: osintResult.ip,
+        timestamp: osintResult.timestamp,
+        shodan: osintResult.shodan,
+        abuseipdb: osintResult.abuseipdb,
+        greynoise: osintResult.greynoise,
+        ipinfo: osintResult.ipinfo,
+        virustotal: osintResult.virustotal ? {
+          data: {
+            id: osintResult.virustotal?.data?.id,
+            attributes: {
+              last_analysis_stats: osintResult.virustotal?.data?.attributes?.last_analysis_stats,
+              reputation: osintResult.virustotal?.data?.attributes?.reputation,
+              country: osintResult.virustotal?.data?.attributes?.country,
+              as_owner: osintResult.virustotal?.data?.attributes?.as_owner,
+            }
+          }
+        } : null
+      };
+      const res = await fetch('/api/osint/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ osintData: trimmedData })
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      setAiAnalysis(data.analysis);
+      addLog(`Análisis IA completado para ${osintResult.ip}`);
+    } catch (err: any) {
+      setAiError(err.message);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -421,6 +468,53 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           </div>
         )}
       </div>
+
+      {/* AI Analysis Panel */}
+      {osintResult && (
+        <div className="mt-5 bg-brand-panel border border-brand-cyan/20 p-5 rounded-lg shadow-2xl space-y-4">
+          <div className="flex justify-between items-center pb-2 border-b border-brand-border/60">
+            <h4 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">
+              <Zap size={16} className="text-brand-cyan" />
+              INFORME DE INTELIGENCIA IA — GEMINI
+            </h4>
+            <button
+              onClick={handleAiAnalysis}
+              disabled={aiLoading}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-brand-cyan/30 to-brand-green/30 hover:from-brand-cyan/40 hover:to-brand-green/40 border border-brand-cyan/45 text-white font-bold text-xs rounded transition disabled:opacity-50 active:scale-95"
+            >
+              {aiLoading ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+              {aiLoading ? 'Analizando con IA...' : 'Generar Informe IA'}
+            </button>
+          </div>
+
+          {aiError && (
+            <div className="bg-red-950/30 border border-red-700/40 rounded p-2 text-[10px] text-red-400 font-mono flex items-center gap-2">
+              <AlertCircle size={12} />
+              {aiError}
+            </div>
+          )}
+
+          {!aiAnalysis && !aiLoading && !aiError && (
+            <div className="text-center py-4 text-zinc-600 text-xs font-mono">
+              Pulsa "Generar Informe IA" para que Gemini analice los resultados OSINT y genere un informe de amenazas.
+            </div>
+          )}
+
+          {aiAnalysis && (
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded p-4 text-xs text-zinc-300 font-sans leading-relaxed max-h-96 overflow-y-auto space-y-1">
+              {aiAnalysis.split('\n').map((line, i) => {
+                if (line.startsWith('### ')) return <h3 key={i} className="text-brand-cyan font-bold text-[11px] mt-3 mb-1">{line.replace('### ', '')}</h3>;
+                if (line.startsWith('## ')) return <h2 key={i} className="text-white font-bold text-xs mt-4 mb-1 border-b border-zinc-700 pb-1">{line.replace('## ', '')}</h2>;
+                if (line.startsWith('# ') || line.startsWith('**') && line.endsWith('**')) return <h2 key={i} className="text-white font-bold text-xs mt-4 mb-1">{line.replace(/\*\*/g, '').replace('# ', '')}</h2>;
+                if (line.startsWith('* ') || line.startsWith('- ')) return <div key={i} className="flex gap-2 ml-2"><span className="text-brand-cyan mt-0.5">•</span><span dangerouslySetInnerHTML={{__html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')}} /></div>;
+                if (line.startsWith('---')) return <hr key={i} className="border-zinc-700 my-2" />;
+                if (line.trim() === '') return <div key={i} className="h-1" />;
+                return <p key={i} className="text-zinc-400" dangerouslySetInnerHTML={{__html: line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')}} />;
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
