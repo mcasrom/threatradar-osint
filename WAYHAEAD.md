@@ -614,3 +614,13 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 - Modelo correcto: gemini-2.0-flash
 - Probar informe premium mañana con: curl -s -X POST http://localhost:3000/api/premium-report -H "Content-Type: application/json" -d '{"organization":"Test","infrastructure":"nginx Ubuntu","targetIp":"1.1.1.1"}'
 - Si sigue fallando: activar billing en https://ai.google.dev/gemini-api/docs/billing
+
+---
+
+## 🐛 Bug — Export YouTube
+
+- El link generado para YouTube no es viable (URL simulada)
+- Ver componente: grep -rn "youtube\|export\|clip" src/ 
+- Solución posible: eliminar feature falsa o reemplazar con export de clip de video real
+- O simplemente exportar como GIF/MP4 del canvas del mapa
+
