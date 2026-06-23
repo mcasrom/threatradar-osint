@@ -571,3 +571,11 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 1. [ ] Página /pricing pública en frontend
 2. [ ] Verificar Docker funciona
 3. [ ] Tests básicos curl (smoke tests)
+
+---
+
+## ✅ Sprint 6 COMPLETO — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] MonetizationPanel conectado con JWT token para checkout Stripe
+- [x] Email input
