@@ -61,10 +61,9 @@ export const MonetizationPanel: React.FC = () => {
     try {
       const response = await fetch('/api/billing/setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('tr_token') || ''}` },
         body: JSON.stringify({
-          planName: selectedPlan.toUpperCase(),
-          email: emailInput
+          planName: selectedPlan.toUpperCase()
         })
       });
       const data = await response.json();
