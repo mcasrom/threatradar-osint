@@ -473,3 +473,19 @@
 - [ ] Login/register UI en el frontend
 - [ ] Dashboard de usuario (plan, scans usados, upgrade button)
 - [ ] GreyNoise endpoint (cuando esté la key)
+
+---
+
+## ✅ Sprint 3 — Stripe + SQLite completo — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] /api/billing/setup protegido con authMiddleware
+- [x] Stripe webhook migrado a SQLite (updateUserPlan + updateSubscriptionStatus)
+- [x] createSubscription/updateUserPlan/updateSubscriptionStatus en sqlite.ts
+- [x] Stripe checkout pasa userId en metadata para actualizar plan tras pago
+
+### Pendiente Sprint 4:
+- [ ] Login/register UI en el frontend
+- [ ] Dashboard de usuario (plan, scans usados, upgrade button)
+- [ ] GreyNoise endpoint (cuando esté la key)
+- [ ] Tests básicos (Jest)
