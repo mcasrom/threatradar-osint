@@ -12,6 +12,9 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
   const [detectionLogs, setDetectionLogs] = useState<string[]>([]);
   const [resolvedGeo, setResolvedGeo] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [osintResult, setOsintResult] = useState<any>(null);
+  const [osintLoading, setOsintLoading] = useState(false);
+  const [osintError, setOsintError] = useState<string | null>(null);
 
   // Auto-detect IP on mount
   useEffect(() => {
@@ -168,8 +171,63 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     }
   };
 
+  const handleOsintFull = async () => {
+    if (!customIp) {
+      setOsintError('Introduce una IP primero (usa Detectar o escribe una).');
+      return;
+    }
+    const token = localStorage.getItem('tr_token');
+    if (!token) {
+      setOsintError('Debes iniciar sesión para usar el análisis OSINT completo.');
+      return;
+    }
+    setOsintLoading(true);
+    setOsintResult(null);
+    setOsintError(null);
+    try {
+      const res = await fetch(`/api/osint/ip-full/${customIp}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.status === 401) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+      if (res.status === 429) {
+        const d = await res.json();
+        throw new Error(d.error || 'Límite de scans alcanzado. Actualiza tu plan.');
+      }
+      if (!res.ok) throw new Error(`Error ${res.status} del servidor.`);
+      const data = await res.json();
+      setOsintResult(data);
+      addLog(`Análisis OSINT completo para ${customIp} — ${Object.keys(data).filter(k => data[k] && !data[k].error && k !== 'ip' && k !== 'timestamp').length} fuentes con datos.`);
+    } catch (err: any) {
+      setOsintError(err.message);
+    } finally {
+      setOsintLoading(false);
+    }
+  };
+
+  const renderOsintSource = (label: string, data: any, color: string) => {
+    if (!data) return (
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded p-2">
+        <span className="text-[9px] font-mono text-zinc-600">{label}: API key no configurada</span>
+      </div>
+    );
+    if (data.error) return (
+      <div className="bg-red-950/30 border border-red-900/40 rounded p-2">
+        <span className="text-[9px] font-mono text-red-400">{label}: {data.error}</span>
+      </div>
+    );
+    return (
+      <div className={`bg-zinc-900/60 border ${color} rounded p-2.5 space-y-1`}>
+        <div className="text-[9px] font-mono font-bold text-zinc-300 border-b border-zinc-800 pb-1 mb-1">{label}</div>
+        <pre className="text-[8px] font-mono text-zinc-400 whitespace-pre-wrap break-all max-h-28 overflow-y-auto">
+          {JSON.stringify(data, null, 2).slice(0, 600)}{JSON.stringify(data).length > 600 ? '...' : ''}
+        </pre>
+      </div>
+    );
+  };
+
   return (
-    <div id="ip-tester-interactive-suite" className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div id="ip-tester-interactive-suite" className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       
       {/* Interactive Geolocation Injector Card */}
       <div className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 flex flex-col justify-between shadow-2xl relative overflow-hidden">
@@ -306,6 +364,63 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
         </div>
       </div>
 
+      </div>
+
+      {/* OSINT Full Analysis Card */}
+      <div className="mt-5 bg-brand-panel border border-brand-cyan/30 p-5 rounded-lg shadow-2xl space-y-4">
+        <div className="flex justify-between items-center pb-2 border-b border-brand-border/60">
+          <h4 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">
+            <ShieldAlert size={16} />
+            ANÁLISIS OSINT COMPLETO — DATOS REALES
+          </h4>
+          <span className="text-[9px] bg-brand-cyan/20 text-brand-cyan font-mono px-2 py-0.5 border border-brand-cyan/35 rounded">
+            MULTI-SOURCE INTEL
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-zinc-400 font-mono">IP objetivo:</span>
+          <span className="text-xs text-white font-mono bg-zinc-900 border border-zinc-700 px-2 py-1 rounded">
+            {customIp || '— sin IP —'}
+          </span>
+          <button
+            onClick={handleOsintFull}
+            disabled={osintLoading || !customIp}
+            className="ml-auto px-4 py-2 bg-gradient-to-r from-brand-cyan/30 to-brand-green/30 hover:from-brand-cyan/40 hover:to-brand-green/40 border border-brand-cyan/45 text-white font-bold text-xs rounded transition flex items-center gap-2 disabled:opacity-50 active:scale-95"
+          >
+            {osintLoading ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+            {osintLoading ? 'Analizando...' : 'Lanzar Análisis OSINT'}
+          </button>
+        </div>
+
+        {osintError && (
+          <div className="bg-red-950/30 border border-red-700/40 rounded p-2 text-[10px] text-red-400 font-mono flex items-center gap-2">
+            <AlertCircle size={12} />
+            {osintError}
+          </div>
+        )}
+
+        {osintResult && (
+          <div className="space-y-2">
+            <div className="text-[9px] font-mono text-zinc-500 border-b border-zinc-800 pb-1">
+              Scan completado: {new Date(osintResult.timestamp).toLocaleString()} — IP: {osintResult.ip}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {renderOsintSource('SHODAN', osintResult.shodan, 'border-orange-700/40')}
+              {renderOsintSource('ABUSEIPDB', osintResult.abuseipdb, 'border-red-700/40')}
+              {renderOsintSource('VIRUSTOTAL', osintResult.virustotal, 'border-yellow-700/40')}
+              {renderOsintSource('GREYNOISE', osintResult.greynoise, 'border-blue-700/40')}
+              {renderOsintSource('IPINFO', osintResult.ipinfo, 'border-green-700/40')}
+            </div>
+          </div>
+        )}
+
+        {!osintResult && !osintLoading && !osintError && (
+          <div className="text-center py-6 text-zinc-600 text-xs font-mono">
+            Introduce una IP arriba y pulsa "Lanzar Análisis OSINT" para consultar Shodan, AbuseIPDB, VirusTotal, GreyNoise e IPInfo en tiempo real.
+          </div>
+        )}
+      </div>
     </div>
   );
 };
