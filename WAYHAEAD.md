@@ -399,3 +399,22 @@
 ### Lo que hicimos:
 - [x] src/auth.ts — registerUser, loginUser, generateToken, authMiddleware
 - [x] POST
+
+---
+
+## 🔄 Sprint 2 — Feature Gating — PENDIENTE
+
+### Objetivo: convertir el proyecto en SaaS con tiers reales
+
+### Plan:
+1. [ ] Proteger endpoints OSINT con authMiddleware (requieren token válido)
+2. [ ] Añadir campo scanCount al usuario en db.ts
+3. [ ] Middleware de plan: free=10 scans/mes, pro=ilimitado, enterprise=ilimitado+priority
+4. [ ] /api/auth/register acepta plan como parámetro opcional
+5. [ ] Endpoint /api/user/usage — devuelve scans usados y límite del plan
+6. [ ] Proteger /api/osint/ip-full con auth + plan check
+
+### Lógica de gating:
+- free: máx 10 scans/mes, solo Shodan+AbuseIPDB
+- pro: ilimitado, Shodan+AbuseIPDB+VirusTotal+Hunter
+- enterprise: todo pro + priority queue + webhook support
