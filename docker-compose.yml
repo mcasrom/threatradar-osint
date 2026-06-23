@@ -23,7 +23,11 @@ services:
       - SHODAN_API_KEY=${SHODAN_API_KEY}
       - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
       - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - HUNTER_API_KEY=${HUNTER_API_KEY}
+      - GREYNOISE_API_KEY=${GREYNOISE_API_KEY}
+      - IPINFO_TOKEN=${IPINFO_TOKEN}
       - HIBP_API_KEY=${HIBP_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
     restart: unless-stopped
     volumes:
       - threatradar_data:/app/data
