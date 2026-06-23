@@ -503,3 +503,38 @@
 - [ ] GreyNoise endpoint
 - [ ] Tests básicos Jest
 - [ ] Deploy producción
+
+---
+
+## ✅ Sprint 4 COMPLETO — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] AuthPanel.tsx integrado en App.tsx header
+- [x] Login/register/logout visible en UI
+- [x] Dashboard: plan, scans usados, botón upgrade Pro
+- [x] Stripe checkout desde UI
+
+---
+
+## 📊 RESUMEN TOTAL DEL PROYECTO — 23 Junio 2026
+
+### Sprints completados:
+- Sprint 0: 4 APIs OSINT reales (Shodan, AbuseIPDB, VirusTotal, Hunter)
+- Sprint 1: Auth JWT (register/login/me) con bcrypt
+- Sprint 2: Feature gating (free=10/mes, pro=ilimitado, planMiddleware)
+- Sprint 3: SQLite migration + Stripe billing + todos endpoints protegidos
+- Sprint 4: AuthPanel UI + integración en header
+
+### Estado actual:
+- Backend: production-ready
+- Auth: JWT funcional
+- DB: SQLite (no más JSON)
+- APIs OSINT: 4 fuentes reales verificadas
+- Monetización: Stripe checkout integrado
+- UI Auth: login/register/dashboard/upgrade visible
+
+## 🔄 Sprint 5 — Próxima sesión:
+- [ ] GreyNoise endpoint (key pendiente)
+- [ ] Tests básicos Jest (register, login, ip-full, usage)
+- [ ] Deploy producción (Docker + Nginx)
+- [ ] Página de precios pública /pricing
