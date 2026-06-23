@@ -1,41 +1,25 @@
----
-## ✅ Sesión 23 Junio 2026 — Sumario
-**Lo que hicimos:**
-- Eliminado bug YouTube export (URL simulada falsa) de SimplifiedVectorMap.tsx y MonetizationPanel.tsx
-- Creado PricingPage.tsx — tabla de planes Free/Pro/Enterprise con features reales
-- Integrada tab "Precios" en App.tsx con CTA que navega a billing
-- Corregido Dockerfile — añadidas build tools python3/make/g++ para compilar better-sqlite3
-- Actualizado docker-compose.yml — añadidas variables HUNTER_API_KEY, GREYNOISE_API_KEY, IPINFO_TOKEN, JWT_SECRET
-- Build Docker exitoso — contenedor healthy en localhost:3000
-- Fix /api/auth/register: parámetro plan ignorado → ahora se pasa correctamente a registerUser()
-- 3 commits pusheados a mcasrom/threatradar-osint
+## ✅ Sesión 23 Junio 2026 — COMPLETA
+**Completado esta sesión:**
+- docker-compose up + smoke test (health OK)
+- Fix /api/auth/register: plan ignorado → corregido
+- /api/osint/ip-full conectado a IPTesterAndManual.tsx (datos reales)
+- UserDashboard.tsx: plan, scans usados, fuentes OSINT, botón upgrade
+- Tab "Mi Cuenta" en App.tsx
+- /api/geoip proxy (evita CSP/CORS con ip-api.com)
+- CSP corregida: ws://localhost:24678, http://ip-api.com
+- /api/osint/analyze con Gemini → fallback Groq automático
+- Usuario dev pro: dev@threatradar.local (credenciales en .env.local.secret)
+- groq-sdk instalado, GROQ_API_KEY configurada
 
----
-## ✅ Completado hoy (continuación sesión 23 Jun)
-- UserDashboard.tsx creado: plan actual, scans usados, fuentes OSINT disponibles, botón upgrade
-- Tab "Mi Cuenta" integrada en App.tsx
-- Fix CSP: añadidos http://ip-api.com, ws://localhost:24678 a connect-src
-- Script seed dev user documentado (.env.local.secret)
-- Workflow dev confirmado: npm run dev + sqlite3 para gestión usuarios
-
-## ✅ Completado hoy (continuación sesión 23 Jun)
-- Conectado /api/osint/ip-full a IPTesterAndManual.tsx — card OSINT real con Shodan/AbuseIPDB/VT/GreyNoise/IPInfo
-- AbuseIPDB y VirusTotal devuelven datos reales confirmados (test 8.8.8.8)
-- Usuario dev pro creado: dev@threatradar.local (ver .env.local.secret)
-- .env.example documentado con todas las variables (sin valores reales)
-- GREYNOISE_API_KEY tiene valor incorrecto — pendiente corregir
-
-## 🔄 Sprint 9 — Frontend real (próximo)
-4. Conectar /api/osint/ip-full a IPTesterAndManual.tsx (datos reales en UI)
-5. Dashboard usuario: plan actual, scans usados, upgrade visible
-
-## 🔄 Sprint 10 — Producción
-6. Deploy en Hetzner (Nginx reverse proxy puerto 3000)
-7. Dominio threatradar.viajeinteligencia.com + SSL certbot
-8. .env.production con todas las keys
+## 🔄 Sprint 10 — Producción (próximo)
+1. Deploy en Hetzner (Nginx reverse proxy puerto 3000)
+2. Dominio threatradar.viajeinteligencia.com + SSL certbot
+3. .env.production con todas las keys
+4. Seed usuario dev pro en producción
 
 ## 📋 Backlog
-- Activar billing Gemini (quota free agotada, limit=0)
-- Tests Jest básicos (register, login, ip-full, usage)
+- Activar billing Gemini (quota free agotada)
+- Corregir GREYNOISE_API_KEY (valor incorrecto en .env)
+- Tests Jest básicos (register, login, ip-full, usage, analyze)
 - Página pública sin login (demo limitada)
-- GreyNoise key en producción
+- Análisis IA con markdown renderizado en UI (ahora es texto plano)

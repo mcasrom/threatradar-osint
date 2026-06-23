@@ -64,3 +64,22 @@
     - .env — keys reales (en .gitignore, nunca a GitHub)
     - .env.example — plantilla sin valores (sí en git)
     - .env.local.secret — credenciales dev usuario (en .gitignore)
+
+** 2026-06-23 Sesión 3 — OSINT real, Dashboard, Groq fallback
+   :PROPERTIES:
+   :DATE: 2026-06-23
+   :END:
+*** Completado
+    - /api/osint/ip-full conectado a UI con datos reales (AbuseIPDB, VT confirmados)
+    - Card OSINT en IPTesterAndManual con 5 fuentes
+    - UserDashboard.tsx: plan, scans, fuentes disponibles, upgrade CTA
+    - Tab Mi Cuenta integrada en App.tsx
+    - /api/geoip proxy local (evita upgrade-insecure-requests CSP)
+    - /api/osint/analyze: Gemini → Groq fallback automático (llama-3.1-8b-instant)
+    - groq-sdk instalado, GROQ_API_KEY válida confirmada
+    - CSP corregida en helmet
+*** Pendiente
+    - Deploy Hetzner (Sprint 10)
+    - Markdown rendering en panel IA
+    - GREYNOISE_API_KEY corregir
+    - Billing Gemini activar
