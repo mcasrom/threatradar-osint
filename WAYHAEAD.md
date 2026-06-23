@@ -604,3 +604,13 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 - [ ] Página /pricing pública
 - [ ] Arreglar error ipapi.co en logs frontend
 - [ ] Testear generación de informes IA (Gemini)
+
+---
+
+## 📝 Pendiente — Gemini quota
+
+- Quota diaria agotada en gemini-2.0-flash (free tier)
+- Reset automático mañana
+- Modelo correcto: gemini-2.0-flash
+- Probar informe premium mañana con: curl -s -X POST http://localhost:3000/api/premium-report -H "Content-Type: application/json" -d '{"organization":"Test","infrastructure":"nginx Ubuntu","targetIp":"1.1.1.1"}'
+- Si sigue fallando: activar billing en https://ai.google.dev/gemini-api/docs/billing
