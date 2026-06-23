@@ -10,7 +10,7 @@ import { GoogleGenAI } from '@google/genai';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import { registerUser, loginUser, generateToken, authMiddleware } from './src/auth';
+import { registerUser, loginUser, generateToken, authMiddleware, planMiddleware } from './src/auth';
 
 const execAsync = promisify(exec);
 
@@ -508,6 +508,18 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/auth/me', authMiddleware, (req: any, res) => {
   res.json({ user: req.user });
 });
+
+app.get('/api/user/usage', authMiddleware, (req: any, res) => {
+  const db = readDB();
+  const user = db.users.find((u: any) => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+  const used = user.scanCount?.[monthKey] || 0;
+  const limits = { free: 10, pro: -1, enterprise: -1 };
+  const limit = limits[user.plan as keyof typeof limits] ?? 10;
+  res.json({ email: user.email, plan: user.plan, scansUsed: used, scansLimit: limit, month: monthKey });
+});
 app.get('/api/osint/shodan/:ip', async (req, res) => {
   const apiKey = process.env.SHODAN_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'Shodan API key not configured' });
@@ -595,7 +607,7 @@ app.get('/api/osint/hunter/:domain', async (req, res) => {
   }
 });
 
-app.get('/api/osint/ip-full/:ip', async (req, res) => {
+app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: any, res) => {
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP address' });
   const results: any = { ip, timestamp: new Date().toISOString(), shodan: null, abuseipdb: null, virustotal: null };
@@ -628,7 +640,7 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: 'spa',
     });
-    app.use(vite.middlewares);
+    app.use((req, res, next) => { if (req.path.startsWith("/api")) { return next(); } vite.middlewares(req, res, next); });
   } else {
     console.log("Starting ThreatRadar OSINT in production mode...");
     app.use(express.static(distPath));

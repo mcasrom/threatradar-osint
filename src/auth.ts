@@ -46,3 +46,38 @@ export async function loginUser(email: string, password: string) {
   if (!valid) throw new Error('Invalid credentials');
   return { id: user.id, email: user.email, plan: user.plan };
 }
+
+export function getPlanLimits(plan: string) {
+  const limits: any = {
+    free:       { scansPerMonth: 10,  sources: ['shodan', 'abuseipdb'] },
+    pro:        { scansPerMonth: -1,  sources: ['shodan', 'abuseipdb', 'virustotal', 'hunter'] },
+    enterprise: { scansPerMonth: -1,  sources: ['shodan', 'abuseipdb', 'virustotal', 'hunter', 'all'] }
+  };
+  return limits[plan] || limits['free'];
+}
+
+export function planMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  const db = readDB();
+  const user = db.users.find((u: any) => u.id === req.user?.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const limits = getPlanLimits(user.plan);
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+  if (!user.scanCount) user.scanCount = {};
+  if (!user.scanCount[monthKey]) user.scanCount[monthKey] = 0;
+
+  if (limits.scansPerMonth !== -1 && user.scanCount[monthKey] >= limits.scansPerMonth) {
+    return res.status(429).json({
+      error: `Scan limit reached for your ${user.plan} plan (${limits.scansPerMonth}/month). Upgrade to Pro.`,
+      upgrade: true
+    });
+  }
+
+  user.scanCount[monthKey]++;
+  writeDB(db);
+  req.user = { ...req.user!, plan: user.plan };
+  (req as any).planLimits = limits;
+  next();
+}
