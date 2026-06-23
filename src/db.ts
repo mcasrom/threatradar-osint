@@ -201,7 +201,8 @@ if (!fs.existsSync(DB_FILE)) {
     logReports: [],
     activeSubscriptions: [],
     threatFeeds: [],
-    apiKeys: {}
+    apiKeys: {},
+    users: []
   };
   fs.writeFileSync(DB_FILE, JSON.stringify(initialSchema, null, 2));
 }

@@ -10,6 +10,7 @@ import { GoogleGenAI } from '@google/genai';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
+import { registerUser, loginUser, generateToken, authMiddleware } from './src/auth';
 
 const execAsync = promisify(exec);
 
@@ -479,6 +480,34 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), asyn
 });
 
 // 9. External API integrations (proxied through server for security)
+
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const user = await registerUser(email, password);
+    const token = generateToken(user);
+    res.json({ token, user });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const user = await loginUser(email, password);
+    const token = generateToken(user);
+    res.json({ token, user });
+  } catch (err: any) {
+    res.status(401).json({ error: err.message });
+  }
+});
+
+app.get('/api/auth/me', authMiddleware, (req: any, res) => {
+  res.json({ user: req.user });
+});
 app.get('/api/osint/shodan/:ip', async (req, res) => {
   const apiKey = process.env.SHODAN_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'Shodan API key not configured' });
