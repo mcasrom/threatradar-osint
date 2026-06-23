@@ -11,7 +11,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { registerUser, loginUser, generateToken, authMiddleware, planMiddleware } from './src/auth';
-import { getUserById, getScanCount } from './src/sqlite';
+import { getUserById, getScanCount, createSubscription, updateSubscriptionStatus, updateUserPlan } from './src/sqlite';
 
 const execAsync = promisify(exec);
 
@@ -396,84 +396,54 @@ app.get('/api/reports/auto-generate', (req, res) => {
 });
 
 // 8. Stripe Billing
-app.post('/api/billing/setup', async (req, res) => {
-  const { planName, email } = req.body;
-  if (!planName) {
-    return res.status(400).json({ error: 'planName required' });
-  }
-
+app.post('/api/billing/setup', authMiddleware, async (req: any, res) => {
+  const { planName } = req.body;
+  if (!planName) return res.status(400).json({ error: 'planName required' });
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeKey) {
-    return res.status(503).json({ 
-      error: 'Stripe not configured. Set STRIPE_SECRET_KEY in .env',
-      setup: 'https://dashboard.stripe.com/apikeys'
-    });
-  }
-
+  if (!stripeKey) return res.status(503).json({ error: 'Stripe not configured' });
   try {
     const stripe = require('stripe')(stripeKey);
-    
     const priceMap: Record<string, string> = {
-      'BASIC': process.env.STRIPE_PRICE_BASIC || '',
-      'PREMIUM': process.env.STRIPE_PRICE_PREMIUM || '',
+      'BASIC':      process.env.STRIPE_PRICE_BASIC || '',
+      'PREMIUM':    process.env.STRIPE_PRICE_PREMIUM || '',
       'ENTERPRISE': process.env.STRIPE_PRICE_ENTERPRISE || ''
     };
-
     const priceId = priceMap[planName.toUpperCase()];
-    if (!priceId) {
-      return res.status(400).json({ error: `Invalid plan: ${planName}` });
-    }
-
+    if (!priceId) return res.status(400).json({ error: `Invalid plan: ${planName}` });
+    const user = getUserById(req.user.id);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      customer_email: email || undefined,
+      customer_email: user?.email || undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: `${APP_URL}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}?payment=cancelled`,
-      metadata: { plan: planName }
+      metadata: { plan: planName, userId: req.user.id }
     });
-
-    const db = readDB();
-    db.activeSubscriptions = db.activeSubscriptions || [];
-    db.activeSubscriptions.push({
-      id: `SUB-${Date.now()}`,
-      plan: planName,
-      email: email || 'anonymous@domain.com',
-      status: 'pending',
-      stripeSessionId: session.id,
-      date: new Date().toISOString()
-    });
-    writeDB(db);
-
+    createSubscription(`SUB-${Date.now()}`, req.user.id, planName, session.id, user?.email || '');
     res.json({ success: true, checkoutUrl: session.url });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Stripe error' });
   }
 });
-
 // Stripe webhook
 app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) return res.status(503).send('Stripe not configured');
-
   const stripe = require('stripe')(stripeKey);
   const sig = req.headers['stripe-signature'] as string;
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
   try {
     const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret!);
-
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as any;
-      const db = readDB();
-      const sub = db.activeSubscriptions?.find((s: any) => s.stripeSessionId === session.id);
-      if (sub) {
-        sub.status = 'completed';
-        writeDB(db);
+      const userId = session.metadata?.userId;
+      const plan = session.metadata?.plan?.toLowerCase();
+      if (userId && plan) {
+        updateUserPlan(userId, plan);
+        updateSubscriptionStatus(session.id, 'completed');
       }
     }
-
     res.json({ received: true });
   } catch (err: any) {
     res.status(400).send(`Webhook Error: ${err.message}`);

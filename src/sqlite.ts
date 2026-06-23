@@ -63,3 +63,19 @@ export function getScanCount(id: string): Record<string, number> {
 }
 
 export default db;
+
+export function createSubscription(id: string, userId: string, plan: string, stripeSessionId: string, email: string) {
+  const now = new Date().toISOString();
+  db.prepare(`INSERT INTO subscriptions (id, user_id, stripe_customer_id, stripe_subscription_id, plan, status, created_at)
+    VALUES (?, ?, ?, ?, ?, 'pending', ?)`)
+    .run(id, userId, email, stripeSessionId, plan, now);
+}
+
+export function updateSubscriptionStatus(stripeSessionId: string, status: string) {
+  db.prepare(`UPDATE subscriptions SET stripe_subscription_id = ? WHERE stripe_customer_id = ?`)
+    .run(status, stripeSessionId);
+}
+
+export function updateUserPlan(userId: string, plan: string) {
+  db.prepare('UPDATE users SET plan = ? WHERE id = ?').run(plan, userId);
+}
