@@ -289,7 +289,7 @@ app.post('/api/premium-report', async (req, res) => {
          5. ACTIONABLE REMEDIATION PLAN`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         systemInstruction: 'Act as a military-grade security analyst. Provide high-fidelity technical advice in Spanish/English.',
@@ -325,7 +325,7 @@ Previous Reports: ${existingReports.length}`;
   if (ai) {
     try {
       const gRes = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-2.0-flash',
         contents: `Generate a ${period} security summary report. Active modules: ${modules.length}. Focus on OSINT findings and mitigation. Markdown format.`,
       });
       if (gRes.text) analysisText = gRes.text;
