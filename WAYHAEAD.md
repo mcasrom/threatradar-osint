@@ -455,3 +455,21 @@
 3. [ ] Migrar JSON DB a SQLite (mejor concurrencia y persistencia)
 4. [ ] Login/register UI en el frontend
 5. [ ] Dashboard de usuario (plan, scans usados, upgrade button)
+
+---
+
+## ✅ Sprint 3 — Parcial — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] Todos los endpoints OSINT protegidos con authMiddleware (401 sin token)
+- [x] SQLite instalado (better-sqlite3) — reemplaza JSON db
+- [x] src/sqlite.ts — schema: users, reports, subscriptions
+- [x] src/auth.ts — migrado a SQLite (getUser, getUserById, createUser, updateScanCount)
+- [x] /api/user/usage — migrado a SQLite
+- [x] Verificado: registro, login y usage funcionan sobre SQLite
+
+### Pendiente Sprint 3:
+- [ ] Stripe en producción (conectar plan pro/enterprise al checkout)
+- [ ] Login/register UI en el frontend
+- [ ] Dashboard de usuario (plan, scans usados, upgrade button)
+- [ ] GreyNoise endpoint (cuando esté la key)
