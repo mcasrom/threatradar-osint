@@ -347,7 +347,7 @@ Reportes programados por email (SMTP) y webhooks.`;
         </div>
 
         <div className="text-[10px] text-zinc-500 font-mono text-center md:text-right">
-          <span>THREATRADAR OSINT • threatradar-osint@viajeinteligencia.com</span>
+          <span>THREATRADAR OSINT • <a href="mailto:threatradar-osint@viajeinteligencia.com" className="text-brand-cyan hover:underline">threatradar-osint@viajeinteligencia.com</a></span>
         </div>
       </footer>
     </div>
