@@ -8,6 +8,7 @@ import { createServer as createViteServer } from 'vite';
 import { readDB, writeDB, GEMINI_API_KEY, APP_URL } from './src/db';
 import { GoogleGenAI } from '@google/genai';
 import helmet from 'helmet';
+import Groq from 'groq-sdk';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import { registerUser, loginUser, generateToken, authMiddleware, planMiddleware } from './src/auth';
@@ -17,6 +18,9 @@ const execAsync = promisify(exec);
 
 // Initialize Gemini client
 let ai: GoogleGenAI | null = null;
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const groq = GROQ_API_KEY ? new Groq({ apiKey: GROQ_API_KEY }) : null;
+
 if (GEMINI_API_KEY) {
   ai = new GoogleGenAI({
     apiKey: GEMINI_API_KEY,
@@ -618,6 +622,61 @@ app.get('/api/osint/ipinfo/:ip', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+});
+
+app.post('/api/osint/analyze', authMiddleware, async (req: any, res) => {
+  const { osintData } = req.body;
+  if (!osintData || !osintData.ip) return res.status(400).json({ error: 'osintData requerido' });
+
+  const prompt = `Eres un analista de ciberseguridad experto. Analiza estos resultados OSINT para la IP ${osintData.ip} y genera un informe de inteligencia de amenazas en español.
+
+DATOS OSINT:
+${JSON.stringify(osintData, null, 2)}
+
+Genera un informe estructurado con estas secciones:
+1. RESUMEN EJECUTIVO — riesgo general (CRITICO/ALTO/MEDIO/BAJO) y puntuacion 0-100
+2. HALLAZGOS POR FUENTE — analiza cada fuente disponible (Shodan, AbuseIPDB, VirusTotal, GreyNoise, IPInfo)
+3. INDICADORES DE COMPROMISO — IPs, puertos, servicios o patrones sospechosos detectados
+4. CONTEXTO DE AMENAZA — tipo de actor, motivacion probable, infraestructura asociada
+5. RECOMENDACIONES — acciones concretas de mitigacion y bloqueo
+
+Se tecnico, preciso y conciso. Usa markdown.`;
+
+  // Intentar Gemini primero, fallback a Groq
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+        config: { systemInstruction: 'Eres un analista OSINT militar. Responde siempre en espanol con precision tecnica.' }
+      });
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text || response.text || '';
+      return res.json({ analysis: text, ip: osintData.ip, timestamp: new Date().toISOString(), engine: 'gemini' });
+    } catch (geminiErr: any) {
+      console.warn('Gemini failed, falling back to Groq:', geminiErr.message?.slice(0, 100));
+    }
+  }
+
+  // Fallback Groq
+  if (groq) {
+    try {
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: 'Eres un analista OSINT experto. Responde siempre en espanol con precision tecnica.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 2048,
+        temperature: 0.3
+      });
+      const text = completion.choices?.[0]?.message?.content || '';
+      return res.json({ analysis: text, ip: osintData.ip, timestamp: new Date().toISOString(), engine: 'groq' });
+    } catch (groqErr: any) {
+      return res.status(500).json({ error: 'Error en Groq', detail: groqErr.message });
+    }
+  }
+
+  res.status(503).json({ error: 'No hay motor IA disponible. Configura GEMINI_API_KEY o GROQ_API_KEY.' });
 });
 
 app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: any, res) => {
