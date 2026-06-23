@@ -562,3 +562,12 @@ Shodan, AbuseIPDB, VirusTotal, Hunter, GreyNoise, IPInfo
 - [ ] Tests Jest básicos
 - [ ] Deploy producción Docker
 - [ ] Página /pricing pública
+
+---
+
+## 🔄 Sprint 6 — Deploy + Pricing — 23 Junio 2026
+
+### Plan (sesión actual):
+1. [ ] Página /pricing pública en frontend
+2. [ ] Verificar Docker funciona
+3. [ ] Tests básicos curl (smoke tests)
