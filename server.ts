@@ -520,7 +520,7 @@ app.get('/api/user/usage', authMiddleware, (req: any, res) => {
   const limit = limits[user.plan as keyof typeof limits] ?? 10;
   res.json({ email: user.email, plan: user.plan, scansUsed: used, scansLimit: limit, month: monthKey });
 });
-app.get('/api/osint/shodan/:ip', async (req, res) => {
+app.get('/api/osint/shodan/:ip', authMiddleware, async (req, res) => {
   const apiKey = process.env.SHODAN_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'Shodan API key not configured' });
   
@@ -536,7 +536,7 @@ app.get('/api/osint/shodan/:ip', async (req, res) => {
   }
 });
 
-app.get('/api/osint/abuseipdb/:ip', async (req, res) => {
+app.get('/api/osint/abuseipdb/:ip', authMiddleware, async (req, res) => {
   const apiKey = process.env.ABUSEIPDB_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'AbuseIPDB API key not configured' });
   
@@ -554,7 +554,7 @@ app.get('/api/osint/abuseipdb/:ip', async (req, res) => {
   }
 });
 
-app.get('/api/osint/virustotal/:ip', async (req, res) => {
+app.get('/api/osint/virustotal/:ip', authMiddleware, async (req, res) => {
   const apiKey = process.env.VIRUSTOTAL_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'VirusTotal API key not configured' });
   
@@ -572,7 +572,7 @@ app.get('/api/osint/virustotal/:ip', async (req, res) => {
   }
 });
 
-app.get('/api/osint/hibp/:email', async (req, res) => {
+app.get('/api/osint/hibp/:email', authMiddleware, async (req, res) => {
   const apiKey = process.env.HIBP_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'HIBP API key not configured' });
   
@@ -593,7 +593,7 @@ app.get('/api/osint/hibp/:email', async (req, res) => {
   }
 });
 
-app.get('/api/osint/hunter/:domain', async (req, res) => {
+app.get('/api/osint/hunter/:domain', authMiddleware, async (req, res) => {
   const apiKey = process.env.HUNTER_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'Hunter API key not configured' });
   const domain = req.params.domain.replace(/[^a-zA-Z0-9.-]/g, '');
