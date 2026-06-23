@@ -46,7 +46,7 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
       }
     } catch (err: any) {
       if (!quiet) {
-        addLog('Error al llamar a ipapi.co. Probando proveedor de respaldo ipify...');
+        addLog('Reintentando con proveedor de respaldo...');
       }
       try {
         const fallbackRes = await fetch('https://api.ipify.org?format=json');
