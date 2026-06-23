@@ -418,3 +418,21 @@
 - free: máx 10 scans/mes, solo Shodan+AbuseIPDB
 - pro: ilimitado, Shodan+AbuseIPDB+VirusTotal+Hunter
 - enterprise: todo pro + priority queue + webhook support
+
+---
+
+## ✅ Sprint 2 — Feature Gating — 23 Junio 2026
+
+### Lo que hicimos:
+- [x] planMiddleware — controla scans por plan (free=10/mes, pro=-1, enterprise=-1)
+- [x] getPlanLimits() — define sources permitidas por tier
+- [x] /api/user/usage — devuelve scansUsed/scansLimit/plan/month
+- [x] /api/osint/ip-full protegido con authMiddleware + planMiddleware
+- [x] scanCount persistido en db.ts por mes (key: YYYY-M)
+- [x] Verificado: scan cuenta +1, límite free=10 funcional
+
+### Próximo — Sprint 3:
+- [ ] Proteger resto de endpoints OSINT con auth
+- [ ] Stripe en producción (conectar plan pro/enterprise al checkout)
+- [ ] Migrar JSON DB a SQLite
+- [ ] Frontend: login/register UI
