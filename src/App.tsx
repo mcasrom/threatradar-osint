@@ -48,7 +48,7 @@ export default function App() {
 
   const handleShare = (platform: 'twitter' | 'linkedin' | 'whatsapp' | 'copy') => {
     const text = 'ThreatRadar OSINT: Estación defensiva e inteligencia de fuentes abiertas en tiempo real.';
-    const url = window.location.href;
+    const url = import.meta.env.VITE_APP_URL || window.location.href;
     if (platform === 'twitter') {
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
     } else if (platform === 'linkedin') {
