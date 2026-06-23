@@ -453,10 +453,10 @@ app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), asyn
 // 9. External API integrations (proxied through server for security)
 
 app.post('/api/auth/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, plan } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   try {
-    const user = await registerUser(email, password);
+    const user = await registerUser(email, password, plan);
     const token = generateToken(user);
     res.json({ token, user });
   } catch (err: any) {

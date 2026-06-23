@@ -1,0 +1,42 @@
+#+TITLE: ThreatRadar OSINT — Historial del Proyecto
+#+AUTHOR: Miguel
+#+STARTUP: overview
+
+* ThreatRadar OSINT
+
+** 2026-06-23 Sesión 2 — Docker, fix auth, smoke tests
+   :PROPERTIES:
+   :DATE: 2026-06-23
+   :END:
+*** Completado
+    - docker-compose up -d → contenedor healthy (puerto 3000)
+    - Smoke test /api/health → ok, version 2.0.0
+    - Fix bug /api/auth/register: plan ignorado → ahora registerUser(email, password, plan)
+    - Test register con plan=pro → devuelve plan=pro correctamente
+    - Rebuild Docker exitoso tras fix
+*** Pendiente inmediato
+    - Sprint 9: conectar /api/osint/ip-full a IPTesterAndManual.tsx
+    - Sprint 9: dashboard usuario con plan/scans/upgrade
+*** Notas técnicas
+    - docker-compose 1.29.2 tiene bug ContainerConfig → usar down+up en lugar de up --build
+    - JWT_SECRET e IPINFO_TOKEN no configurados en .env local (warnings no bloqueantes en dev)
+    - SQLite via better-sqlite3, usuarios en data/threatradar.db
+
+** 2026-06-22 Sesión 1 — Setup inicial, UI, Dockerfile
+   :PROPERTIES:
+   :DATE: 2026-06-22
+   :END:
+*** Completado
+    - Eliminado bug YouTube export (URL simulada) en SimplifiedVectorMap.tsx y MonetizationPanel.tsx
+    - Creado PricingPage.tsx con planes Free/Pro/Enterprise
+    - Integrada tab Precios en App.tsx
+    - Corregido Dockerfile: añadidas build tools python3/make/g++ para better-sqlite3
+    - Actualizado docker-compose.yml: HUNTER_API_KEY, GREYNOISE_API_KEY, IPINFO_TOKEN, JWT_SECRET
+    - 2 commits pusheados a mcasrom/threatradar-osint
+*** Arquitectura establecida
+    - Frontend: React + Vite + TypeScript (src/)
+    - Backend: Express + TypeScript (server.ts)
+    - Auth: JWT + bcrypt + SQLite (src/auth.ts + src/sqlite.ts)
+    - DB: better-sqlite3 para users, JSON flat file para modules/reports
+    - Build: vite build + esbuild → dist/server.cjs
+    - Deploy: Docker (node:20-alpine, multistage)
