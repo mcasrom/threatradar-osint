@@ -39,7 +39,7 @@ Generado: 2026-06-24 06:32
 
 ---
 
-## SPRINT 12 — React-Markdown (PROXIMO)
+## SPRINT 12 — React-Markdown (COMPLETADO 2026-06-24)
 Objetivo: Renderizar el informe IA con formato real en lugar de texto plano
 - Instalar: npm install react-markdown
 - Modificar IPTesterAndManual.tsx: sustituir .split('\n').map() por <ReactMarkdown>

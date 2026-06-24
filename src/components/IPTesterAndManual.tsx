@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThreatAlert } from '../types';
+import ReactMarkdown from 'react-markdown';
 import { Globe, MapPin, Terminal, HelpCircle, ArrowRight, CheckCircle2, ShieldAlert, BookOpen, AlertCircle, RefreshCw, Zap, Copy, FileDown, Shield, Activity } from 'lucide-react';
 
 interface IPTesterProps {
@@ -605,16 +606,29 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           )}
 
           {aiAnalysis && (
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded p-4 text-xs text-zinc-300 font-sans leading-relaxed max-h-96 overflow-y-auto space-y-1">
-              {aiAnalysis.split('\n').map((line, i) => {
-                if (line.startsWith('### ')) return <h3 key={i} className="text-brand-cyan font-bold text-[11px] mt-3 mb-1">{line.replace('### ', '')}</h3>;
-                if (line.startsWith('## ')) return <h2 key={i} className="text-white font-bold text-xs mt-4 mb-1 border-b border-zinc-700 pb-1">{line.replace('## ', '')}</h2>;
-                if (line.startsWith('# ') || line.startsWith('**') && line.endsWith('**')) return <h2 key={i} className="text-white font-bold text-xs mt-4 mb-1">{line.replace(/\*\*/g, '').replace('# ', '')}</h2>;
-                if (line.startsWith('* ') || line.startsWith('- ')) return <div key={i} className="flex gap-2 ml-2"><span className="text-brand-cyan mt-0.5">•</span><span dangerouslySetInnerHTML={{__html: line.slice(2).replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')}} /></div>;
-                if (line.startsWith('---')) return <hr key={i} className="border-zinc-700 my-2" />;
-                if (line.trim() === '') return <div key={i} className="h-1" />;
-                return <p key={i} className="text-zinc-400" dangerouslySetInnerHTML={{__html: line.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')}} />;
-              })}
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded p-4 text-xs text-zinc-300 font-sans leading-relaxed max-h-96 overflow-y-auto markdown-osint">
+              <ReactMarkdown
+                components={{
+                  h1: ({children}) => <h1 className="text-white font-bold text-sm mt-4 mb-2 border-b border-zinc-700 pb-1">{children}</h1>,
+                  h2: ({children}) => <h2 className="text-white font-bold text-xs mt-4 mb-1 border-b border-zinc-700 pb-1">{children}</h2>,
+                  h3: ({children}) => <h3 className="text-brand-cyan font-bold text-[11px] mt-3 mb-1">{children}</h3>,
+                  h4: ({children}) => <h4 className="text-brand-green font-bold text-[11px] mt-2 mb-1">{children}</h4>,
+                  p: ({children}) => <p className="text-zinc-400 mb-2 leading-relaxed">{children}</p>,
+                  ul: ({children}) => <ul className="space-y-1 mb-2 ml-2">{children}</ul>,
+                  ol: ({children}) => <ol className="space-y-1 mb-2 ml-4 list-decimal">{children}</ol>,
+                  li: ({children}) => <li className="flex gap-2 text-zinc-300"><span className="text-brand-cyan shrink-0 mt-0.5">•</span><span>{children}</span></li>,
+                  code: ({inline, children}: any) => inline
+                    ? <code className="bg-[#0d1117] text-green-300 px-1.5 py-0.5 rounded text-[10px] font-mono">{children}</code>
+                    : <pre className="bg-[#0d1117] border border-brand-border rounded p-3 text-[10px] font-mono text-green-300 overflow-x-auto my-2 whitespace-pre-wrap"><code>{children}</code></pre>,
+                  strong: ({children}) => <strong className="text-white font-bold">{children}</strong>,
+                  em: ({children}) => <em className="text-zinc-300 italic">{children}</em>,
+                  hr: () => <hr className="border-zinc-700 my-3" />,
+                  blockquote: ({children}) => <blockquote className="border-l-2 border-brand-cyan pl-3 text-zinc-400 italic my-2">{children}</blockquote>,
+                  a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-cyan hover:underline">{children}</a>,
+                }}
+              >
+                {aiAnalysis}
+              </ReactMarkdown>
             </div>
           )}
         </div>
