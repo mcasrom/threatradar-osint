@@ -11,6 +11,8 @@ export const OSINTModulesManager: React.FC = () => {
   
   // Custom Module form
   const [showAddForm, setShowAddForm] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customDescription, setCustomDescription] = useState('');
   const [customCommand, setCustomCommand] = useState('');
@@ -32,6 +34,7 @@ export const OSINTModulesManager: React.FC = () => {
 
   const handleRunCommand = async () => {
     if (!targetQuery) return;
+    if (!consentAccepted) { setShowConsentModal(true); return; }
     setIsLoading(true);
     setCommandOutput('Inyectando variables de red en Lubuntu systems...\nEjecutando comando interactivo...');
     try {
@@ -86,13 +89,52 @@ export const OSINTModulesManager: React.FC = () => {
 
   return (
     <div id="osint-analyzer-panel" className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 font-sans">
+
+      {/* Modal consentimiento legal */}
+      {showConsentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#0c1322] border border-yellow-500/40 rounded-lg p-6 max-w-lg w-full mx-4 space-y-4 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <ShieldAlert size={20} className="text-yellow-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold text-yellow-400 font-mono tracking-wider">AVISO LEGAL — USO RESPONSABLE</h4>
+                <p className="text-[10px] text-zinc-500 font-mono mt-0.5">Debe leer y aceptar antes de ejecutar cualquier modulo</p>
+              </div>
+            </div>
+            <div className="bg-[#070b13] border border-brand-border rounded p-4 text-[11px] text-zinc-300 font-sans space-y-2 leading-relaxed">
+              <p>Las herramientas de este modulo realizan <strong className="text-white">reconocimiento activo y pasivo de red</strong>. Su uso esta sujeto a las siguientes condiciones:</p>
+              <ul className="space-y-1 list-none">
+                <li className="flex items-start gap-2"><span className="text-yellow-400 shrink-0">1.</span> Solo puede analizar sistemas, IPs o dominios sobre los que tenga <strong className="text-white">autorizacion expresa por escrito</strong> del propietario o que sean de su propiedad directa.</li>
+                <li className="flex items-start gap-2"><span className="text-yellow-400 shrink-0">2.</span> El uso no autorizado contra terceros puede constituir un <strong className="text-white">delito penal</strong> bajo el Codigo Penal Espanol (Art. 197 bis), la Directiva NIS2 y legislacion equivalente en su jurisdiccion.</li>
+                <li className="flex items-start gap-2"><span className="text-yellow-400 shrink-0">3.</span> ThreatRadar OSINT no se responsabiliza del uso indebido de estas herramientas. El usuario asume <strong className="text-white">responsabilidad exclusiva</strong> sobre los analisis realizados.</li>
+                <li className="flex items-start gap-2"><span className="text-yellow-400 shrink-0">4.</span> Todos los escaneos quedan registrados con timestamp, IP de origen y objetivo en los logs del sistema.</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => { setConsentAccepted(true); setShowConsentModal(false); handleRunCommand(); }}
+                className="flex-1 py-2.5 bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/60 text-yellow-400 font-bold text-xs rounded transition font-mono"
+              >
+                ENTIENDO Y ACEPTO — SOY EL PROPIETARIO O TENGO AUTORIZACION
+              </button>
+              <button
+                onClick={() => setShowConsentModal(false)}
+                className="px-4 py-2.5 bg-brand-panel border border-brand-border text-zinc-400 hover:text-white text-xs rounded transition font-mono"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center w-full mb-1">
         <div>
           <h3 className="text-sm font-bold text-brand-green tracking-wider flex items-center gap-2">
-            <Cpu size={16} /> SISTEMA EXTENSIBLE DE PLUGINS OSINT (CARPETA /MODULES/OSINT)
+            <Cpu size={16} /> MOTOR DE ANALISIS OSINT — MODULOS ACTIVOS
           </h3>
           <p className="text-[10px] text-zinc-500 mt-0.5">
-            Agregue plugins nativos que orquesten nmap, eyewitness o DNS Recon en su sistema corporativo.
+            Ejecute herramientas de reconocimiento sobre objetivos <strong className="text-zinc-400">que usted controla o tiene autorización expresa</strong> para analizar.
           </p>
         </div>
 

@@ -1,5 +1,10 @@
-# ThreatRadar OSINT — WAYAHEAD
-Generado: 2026-06-24 06:32
+#!/usr/bin/env python3
+from datetime import datetime
+
+now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+content = f"""# ThreatRadar OSINT — WAYAHEAD
+Generado: {now}
 
 ## COMPLETADO HOY — Sprint 11
 
@@ -16,7 +21,7 @@ Generado: 2026-06-24 06:32
 - Dimension 4: NMAP INFERENCE pasivo — OS, servicios, vectores sin escaneo activo
 - Dimension 5: ACCIONES CONCRETAS — iptables, fail2ban, SIEM Splunk/ELK
 - Groq model: llama-3.3-70b-versatile (upgrade desde 8b-instant)
-- Respuesta incluye: { analysis, threatScore, ip, timestamp, engine }
+- Respuesta incluye: {{ analysis, threatScore, ip, timestamp, engine }}
 
 ### Badge ThreatRadar Risk Score (IPTesterAndManual.tsx)
 - Score 0-100 prominente (text-5xl) con color semanfico por nivel
@@ -42,7 +47,7 @@ Generado: 2026-06-24 06:32
 ## SPRINT 12 — React-Markdown (PROXIMO)
 Objetivo: Renderizar el informe IA con formato real en lugar de texto plano
 - Instalar: npm install react-markdown
-- Modificar IPTesterAndManual.tsx: sustituir .split('\n').map() por <ReactMarkdown>
+- Modificar IPTesterAndManual.tsx: sustituir .split('\\n').map() por <ReactMarkdown>
 - Añadir estilos prose dark para headings/code/lists dentro del panel oscuro
 
 ---
@@ -85,3 +90,9 @@ Objetivo: Renderizar el informe IA con formato real en lugar de texto plano
 - RESEND_API_KEY: ok (alerts@viajeinteligencia.com)
 - GREYNOISE_API_KEY: INCORRECTO — pendiente corregir
 - STRIPE_*: no configurado (pendiente Sprint 13)
+"""
+
+with open('/home/miguelc/threatradar-osint/WAYAHEAD.md', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print(f"OK: WAYAHEAD.md generado ({now})")
