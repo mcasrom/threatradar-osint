@@ -85,3 +85,11 @@ Objetivo: Renderizar el informe IA con formato real en lugar de texto plano
 - RESEND_API_KEY: ok (alerts@viajeinteligencia.com)
 - GREYNOISE_API_KEY: INCORRECTO — pendiente corregir
 - STRIPE_*: no configurado (pendiente Sprint 13)
+
+---
+## COMPLETADO SESIÓN 2 (2026-06-24 continuación)
+
+- Sprint 12: react-markdown render informe CTI OK
+- PremiumAIChat: copy reescrito "ANALISIS DE RIESGO — TU INFRAESTRUCTURA", campos vacios, placeholders claros
+- AutoReportsManager: email/webhook vacios por defecto, webhook Discord/Slack implementado real (embed Discord + texto Slack, detección automática)
+- OSINTModulesManager: modal consentimiento legal Art.197bis/NIS2, titulo reescrito

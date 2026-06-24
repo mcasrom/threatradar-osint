@@ -7,8 +7,8 @@ interface ChatMessage {
 }
 
 export const PremiumAIChat: React.FC = () => {
-  const [organization, setOrganization] = useState<string>('Globex Security Corp');
-  const [infrastructure, setInfrastructure] = useState<string>('Nginx Frontend, SSH Gateway Port 22, Postgres DB on Hetzner Server');
+  const [organization, setOrganization] = useState<string>('');
+  const [infrastructure, setInfrastructure] = useState<string>('');
   const [chats, setChats] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -35,7 +35,7 @@ export const PremiumAIChat: React.FC = () => {
         setAssessmentScore(data.score);
         // seed chat context
         setChats([
-          { sender: 'assistant', text: `Informe táctico premium generado para ${organization}. He evaluado las vulnerabilidades teóricas de su arquitectura declared. ¿En qué vector de ataque o remediación desea profundizar hoy?` }
+          { sender: 'assistant', text: `Informe de riesgos generado para ${organization}. He analizado los vectores de ataque potenciales de tu infraestructura. ¿En qué area quieres profundizar? Puedes preguntarme sobre hardening, CVEs especificos, configuracion segura o plan de mitigacion.` }
         ]);
       } else {
         setGeneratedReport('No se pudo generar el reporte. Falló la comunicación con el motor de IA.');
@@ -96,10 +96,10 @@ export const PremiumAIChat: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-brand-border pb-3">
         <div>
           <h3 className="text-sm font-bold text-brand-cyan tracking-wider flex items-center gap-1.5">
-            <Cpu size={16} /> MOTOR PREMIUM INTELIGENTE (IA BESPOKE REPORTS & CHAT CONSOLE)
+            <Cpu size={16} /> ANALISIS DE RIESGO — TU INFRAESTRUCTURA
           </h3>
           <p className="text-[10px] text-zinc-500">
-            Evaluación dinámica mediante inteligencia artificial Gemini con chat interactivo en tiempo real.
+            Describe tu infraestructura y obtén un análisis de riesgos con vectores de ataque, recomendaciones de hardening y chat IA para profundizar.
           </p>
         </div>
       </div>
@@ -107,20 +107,22 @@ export const PremiumAIChat: React.FC = () => {
       {/* Target specs */}
       <div className="grid sm:grid-cols-2 gap-4 bg-[#0b121f] p-4 rounded-lg border border-brand-border">
         <div className="space-y-1">
-          <label className="text-[9px] text-zinc-500 font-mono block">ORGANIZACIÓN DEL CLIENTE (TARGET)</label>
+          <label className="text-[9px] text-zinc-500 font-mono block">TU ORGANIZACIÓN O PROYECTO</label>
           <input
             type="text"
             value={organization}
             onChange={(e) => setOrganization(e.target.value)}
+            placeholder="Mi empresa / Mi servidor / Mi proyecto"
             className="w-full bg-[#05070a]/80 border border-brand-border rounded p-2 text-xs text-white font-sans focus:outline-none focus:border-brand-cyan"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[9px] text-zinc-500 font-mono block">PERFIL DE INFRAESTRUCTURA DECLARADO</label>
+          <label className="text-[9px] text-zinc-500 font-mono block">DESCRIBE TU INFRAESTRUCTURA</label>
           <input
             type="text"
             value={infrastructure}
             onChange={(e) => setInfrastructure(e.target.value)}
+            placeholder="Nginx en 443, SSH en 22, PostgreSQL, Ubuntu 22.04, Hetzner..."
             className="w-full bg-[#05070a]/80 border border-brand-border rounded p-2 text-xs text-white font-sans focus:outline-none focus:border-brand-cyan"
           />
         </div>
@@ -131,7 +133,7 @@ export const PremiumAIChat: React.FC = () => {
           className="sm:col-span-2 bg-brand-cyan hover:opacity-95 font-bold text-xs text-black py-2 px-4 rounded transition flex justify-center items-center gap-2 cursor-pointer"
         >
           <FileText size={14} />
-          {isGenerating ? 'Analizando Superficie de Ataque...' : 'Generar Evaluación Táctica Inicial'}
+          {isGenerating ? 'Analizando riesgos...' : 'Analizar riesgos y vectores de ataque'}
         </button>
       </div>
 
@@ -143,7 +145,7 @@ export const PremiumAIChat: React.FC = () => {
             <div>
               <div className="flex justify-between items-center border-b border-brand-border pb-2 mb-2">
                 <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <CheckCircle size={14} className="text-brand-green" /> REPORTE TÁCTICO DE SEGURIDAD
+                  <CheckCircle size={14} className="text-brand-green" /> INFORME DE RIESGOS
                 </span>
                 {assessmentScore !== null && (
                   <span className={`text-[10px] font-mono px-2 py-0.5 border rounded ${
@@ -151,7 +153,7 @@ export const PremiumAIChat: React.FC = () => {
                       ? 'bg-brand-red/25 text-brand-red border-brand-red/40' 
                       : 'bg-brand-green/25 text-brand-green border-brand-green/40'
                   }`}>
-                    POSTURA POST COMPLIANCE: {assessmentScore}%
+                    NIVEL DE EXPOSICION: {assessmentScore}%
                   </span>
                 )}
               </div>

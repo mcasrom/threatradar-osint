@@ -375,6 +375,18 @@ Previous Reports: ${existingReports.length}`;
     }
   }
 
+  // Webhook Discord/Slack
+  let webhookStatus = "";
+  if (webhookUrl && webhookUrl.startsWith("https://")) {
+    try {
+      const isDiscord = webhookUrl.includes("discord.com");
+      const whBody = isDiscord
+        ? JSON.stringify({ username: "ThreatRadar SOC", embeds: [{ title: `ThreatRadar ${period.toUpperCase()} Report`, description: analysisText.slice(0, 4000), color: 0x00e5ff }] })
+        : JSON.stringify({ text: `ThreatRadar ${period.toUpperCase()} Report\n${analysisText.slice(0, 3000)}` });
+      const whRes = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: whBody });
+      webhookStatus = whRes.ok ? `Webhook OK (${isDiscord ? "Discord" : "Slack"})` : `Webhook error ${whRes.status}`;
+    } catch (e: any) { webhookStatus = `Webhook error: ${e.message}`; }
+  }
   db.logReports.unshift(newReport);
   writeDB(db);
 

@@ -5,8 +5,8 @@ import { LogReport } from '../types';
 export const AutoReportsManager: React.FC = () => {
   const [reports, setReports] = useState<LogReport[]>([]);
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [emailTo, setEmailTo] = useState('mcasrom@gmail.com');
-  const [webhookUrl, setWebhookUrl] = useState('https://discord.com/api/webhooks/simulation');
+  const [emailTo, setEmailTo] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [isCompiling, setIsCompiling] = useState(false);
   const [compilationProgress, setCompilationProgress] = useState<string | null>(null);
 
@@ -92,6 +92,7 @@ export const AutoReportsManager: React.FC = () => {
           <input
             type="email"
             value={emailTo}
+            placeholder="tu@email.com"
             onChange={(e) => setEmailTo(e.target.value)}
             className="w-full bg-[#05070a]/80 border border-brand-border rounded p-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan font-mono"
           />
@@ -102,6 +103,7 @@ export const AutoReportsManager: React.FC = () => {
           <input
             type="url"
             value={webhookUrl}
+            placeholder="https://discord.com/api/webhooks/..."
             onChange={(e) => setWebhookUrl(e.target.value)}
             className="w-full bg-[#05070a]/80 border border-brand-border rounded p-1.5 text-xs text-white focus:outline-none focus:border-brand-cyan font-mono"
           />
@@ -149,7 +151,7 @@ export const AutoReportsManager: React.FC = () => {
                     <td className="p-2 uppercase">{rep.period}</td>
                     <td className="p-2">{rep.totalAlerts}</td>
                     <td className="p-2 font-bold text-brand-red">{rep.criticalCount}</td>
-                    <td className="p-2 text-right text-zinc-500">{rep.recipientsCount > 0 ? emailTo : 'Simulado'}</td>
+                    <td className="p-2 text-right text-zinc-500">{emailTo || '—'}</td>
                   </tr>
                 ))}
               </tbody>
