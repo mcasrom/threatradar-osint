@@ -21,9 +21,10 @@ export const PremiumAIChat: React.FC = () => {
     setGeneratedReport(null);
     setAssessmentScore(null);
     try {
+      const token = localStorage.getItem('tr_token');
       const res = await fetch('/api/premium-report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           organization,
           infrastructure

@@ -162,3 +162,17 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] Narrativa UI actualizar (textos fake → reales)
 - [ ] README.md actualizar stack real
 - [ ] Resend email fix via viajeinteligencia proxy
+
+## COMPLETADO — Why Engine 2026-06-25
+- computeThreatScore() ahora devuelve conclusion: {summary, evidence, risk, confidence}
+- Lógica automática sin IA: GreyNoise + AbuseIPDB + OTX + ThreatFox + Shodan
+- Ejemplo 185.220.101.1: "infraestructura maliciosa activa", confianza alta
+- Diferenciador producto: interpretación OSINT vs datos OSINT raw
+
+## PRÓXIMA SESIÓN — Sprint 15 continuación
+- [ ] Mostrar conclusion en UI (IPTesterAndManual.tsx)
+- [ ] Capas mapa por color (C2 rojo, TOR morado, scanner amarillo)
+- [ ] URLHaus integración
+- [ ] Narrativa UI actualizar textos fake
+- [ ] README actualizar
+- [ ] Resend fix via viajeinteligencia proxy

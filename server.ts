@@ -72,7 +72,7 @@ const apiLimiter = rateLimit({
 
 const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: 50,
   message: { error: 'Report generation limit reached. Try again later.' },
 });
 
