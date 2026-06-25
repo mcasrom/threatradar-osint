@@ -34,6 +34,7 @@ if (GEMINI_API_KEY) {
 }
 
 const app = express();
+app.set('trust proxy', 1); // Nginx + Cloudflare
 const PORT = process.env.PORT || 3000;
 
 // --- Security Middleware ---
@@ -981,7 +982,7 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
         }).then(r => r.json()).then(d => { results.threatfox = { status: d.query_status, iocs: d.data || [] }; }).catch(() => {})
       : Promise.resolve(),
     // crt.sh — subdominios via certificados
-    fetch(`https://crt.sh/?q=${ip}&output=json`)
+    fetch(`https://crt.sh/?q=${ip}&output=json`, { signal: AbortSignal.timeout(5000) })
       .then(r => r.json()).then(d => { results.crtsh = { count: d.length, domains: [...new Set(d.map((c: any) => c.name_value))].slice(0, 10) }; }).catch(() => {}),
   ]);
   res.json(results);
