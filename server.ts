@@ -511,14 +511,12 @@ app.get('/api/user/usage', authMiddleware, (req: any, res) => {
   res.json({ email: user.email, plan: user.plan, scansUsed: used, scansLimit: limit, month: monthKey });
 });
 app.get('/api/osint/shodan/:ip', authMiddleware, async (req, res) => {
-  const apiKey = process.env.SHODAN_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'Shodan API key not configured' });
-  
+  // InternetDB: Shodan free — ports, CVEs, tags sin API key
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP' });
 
   try {
-    const response = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${apiKey}`);
+    const response = await fetch(`https://internetdb.shodan.io/${ip}`);
     const data = await response.json();
     res.json(data);
   } catch (err: any) {
@@ -877,8 +875,8 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP address' });
   const results: any = { ip, timestamp: new Date().toISOString(), shodan: null, abuseipdb: null, virustotal: null, greynoise: null, ipinfo: null };
   await Promise.all([
-    process.env.SHODAN_API_KEY
-      ? fetch(`https://api.shodan.io/shodan/host/${ip}?key=${process.env.SHODAN_API_KEY}`)
+    true
+      ? fetch(`https://internetdb.shodan.io/${ip}`)
           .then(r => r.json()).then(d => { results.shodan = d; }).catch(e => { results.shodan = { error: e.message }; })
       : Promise.resolve(),
     process.env.ABUSEIPDB_API_KEY
