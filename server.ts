@@ -619,12 +619,12 @@ app.get('/api/osint/hunter/:domain', authMiddleware, async (req, res) => {
   }
 
 app.get('/api/osint/greynoise/:ip', authMiddleware, async (req, res) => {
-  const apiKey = process.env.GREYNOISE_API_KEY;
-  if (!apiKey) return res.status(503).json({ error: 'GreyNoise API key not configured' });
+  // GreyNoise Community — funciona sin key
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP' });
   try {
-    const response = await fetch(`https://api.greynoise.io/v3/community/${ip}`, { headers: { key: apiKey } });
+    const gnKey = process.env.GREYNOISE_API_KEY;
+    const response = await fetch(`https://api.greynoise.io/v3/community/${ip}`, { headers: gnKey ? { key: gnKey } : {} });
     const data = await response.json();
     res.json(data);
   } catch (err: any) {
@@ -911,10 +911,11 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
       ? fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, { headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY } })
           .then(r => r.json()).then(d => { results.virustotal = d; }).catch(e => { results.virustotal = { error: e.message }; })
       : Promise.resolve(),
-    process.env.GREYNOISE_API_KEY
-      ? fetch(`https://api.greynoise.io/v3/community/${ip}`, { headers: { key: process.env.GREYNOISE_API_KEY } })
-          .then(r => r.json()).then(d => { results.greynoise = d; }).catch(e => { results.greynoise = { error: e.message }; })
-      : Promise.resolve(),
+    // GreyNoise Community — siempre activo, key opcional
+    fetch(`https://api.greynoise.io/v3/community/${ip}`, { 
+        headers: process.env.GREYNOISE_API_KEY ? { key: process.env.GREYNOISE_API_KEY } : {} 
+      })
+      .then(r => r.json()).then(d => { results.greynoise = d; }).catch(e => { results.greynoise = { error: e.message }; }),
     process.env.IPINFO_API_KEY
       ? fetch(`https://ipinfo.io/${ip}?token=${process.env.IPINFO_API_KEY}`)
           .then(r => r.json()).then(d => { results.ipinfo = d; }).catch(e => { results.ipinfo = { error: e.message }; })

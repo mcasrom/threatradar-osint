@@ -55,3 +55,19 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] GreyNoise — reintentar cuando esté disponible
 - [ ] Jest tests endpoints principales
 - [ ] localStorage consentimiento
+
+## COMPLETADO — Opción D+A módulos activos 2026-06-25
+- isPrivateIP() — permite 10.x, 172.16-31.x, 192.168.x, 127.x, 178.105.80.193
+- requiresPrivateTarget() — detecta nmap/masscan/nikto/nuclei en commandTemplate
+- /api/modules/run — bloquea herramientas activas contra IPs públicas con error claro
+- Módulos pasivos (DNS/WHOIS/SSL/theHarvester) — sin restricción de target
+- Resend email — key actualizada en prod pero Hetzner blacklist bloquea entrega (pendiente)
+- Email reports: ruta alternativa via viajeinteligencia API pendiente implementar
+
+## PENDIENTE Sprint 14
+- [ ] Demo pública 3 scans/día sin login
+- [ ] Revisar/actualizar documentación UI módulos (Opción D: renombrar activos→pasivos)
+- [ ] Resend email fix — routing via viajeinteligencia Next.js
+- [ ] GreyNoise key cuando disponible
+- [ ] Jest tests
+- [ ] localStorage consentimiento
