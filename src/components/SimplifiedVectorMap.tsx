@@ -18,6 +18,22 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
   const targetY = 10.8;
 
   // Regional coordinates for world mapping
+  const regionCountries: Record<string, string[]> = {
+    'NORTEAMÉRICA': ['US','CA','MX'],
+    'SUDAMÉRICA': ['BR','AR','CO','CL','PE','VE','EC','BO','PY','UY'],
+    'EUROPA SOC CENTRAL': ['DE','FR','GB','IT','ES','NL','PL','RU','UA','SE','NO','FI','CH','AT','BE','CZ','RO'],
+    'ASIA PACÍFICO': ['CN','JP','KR','IN','SG','TH','VN','ID','PH','MY','TW','HK'],
+    'ÁFRICA CENTRAL': ['ZA','NG','KE','EG','ET','GH','TZ','MA','SN'],
+    'ESTACIÓN AUSTRALIA': ['AU','NZ']
+  };
+
+  const filteredAlerts = selectedRegion === 'GLOBAL'
+    ? alerts
+    : alerts.filter(a => {
+        const countries = regionCountries[selectedRegion] || [];
+        return countries.includes(a.country);
+      });
+
   const regionalCoordinates = [
     { name: 'Norteamérica', x: 22.0, y: 15.2 },
     { name: 'Sudamérica', x: 30.0, y: 32.0 },
@@ -276,7 +292,7 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
 
         {/* Animated Cyber Attack Arcs */}
         <svg viewBox="0 0 100 50" className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible">
-          {alerts.map((alert) => {
+          {filteredAlerts.map((alert) => {
             const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
             const isHovered = hoveredAlert?.id === alert.id;
             
@@ -314,7 +330,7 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
         </svg>
 
         {/* Live Threat Alert Points */}
-        {alerts.map((alert) => {
+        {filteredAlerts.map((alert) => {
           const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
           const severityColors = {
             CRITICAL: { color: 'text-brand-red', bg: 'bg-brand-red', ring: 'border-brand-red/60', pulse: 'via-brand-red' },
@@ -361,7 +377,7 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
         })}
 
         {/* Heatmaps Overlay Layer */}
-        {viewHeatmap && alerts.map((alert, idx) => {
+        {viewHeatmap && filteredAlerts.map((alert, idx) => {
           const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
           return (
             <div
