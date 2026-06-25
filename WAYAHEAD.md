@@ -142,3 +142,23 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] URLHaus integración
 - [ ] Narrativa UI actualizar
 - [ ] README actualizar
+
+## COMPLETADO — Live Threat Map Sprint 15 parcial 2026-06-25
+- Tabla threat_map en SQLite (ip, port, lat, lon, country, threat_type, malware)
+- Cron hourly: ThreatFox get_iocs → geolocalize via IPInfo → SQLite
+- 100 C2 activos geolocalizados en primera ejecución
+- Endpoint GET /api/threatmap/live — devuelve 200 puntos max
+- App.tsx useEffect carga C2 reales en mapa, refresh cada 5min
+- Mapa muestra alertas reales ThreatFox en lugar de datos mock
+- ThreatFox key: dadccac9... (Auth-Key header)
+- URLHaus pendiente (formato diferente, investigar)
+
+## PENDIENTE Sprint 15
+- [ ] Verificar visualmente mapa con puntos C2 reales en UI
+- [ ] Añadir campo malware al tipo ThreatAlert en types.ts
+- [ ] Capas visuales diferenciadas por color (C2 rojo, scanner amarillo, TOR morado)
+- [ ] URLHaus integración (malware distribution naranja)
+- [ ] OTX + ThreatFox añadir al risk engine computeThreatScore()
+- [ ] Narrativa UI actualizar (textos fake → reales)
+- [ ] README.md actualizar stack real
+- [ ] Resend email fix via viajeinteligencia proxy

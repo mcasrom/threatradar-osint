@@ -892,7 +892,34 @@ function computeThreatScore(osintData: any): {
     );
   }
 
-  return { score, level, factors, mitigationCommands };
+  // Why engine — conclusión automática sin IA
+  const conclusion = (() => {
+    const signals = [];
+    if (osintData?.greynoise?.noise) signals.push('escaneo activo detectado por GreyNoise');
+    if (osintData?.greynoise?.classification === 'malicious') signals.push('clasificada como maliciosa');
+    if (osintData?.abuseipdb?.data?.abuseConfidenceScore > 50) signals.push(`AbuseIPDB ${osintData.abuseipdb.data.abuseConfidenceScore}% abuso`);
+    if (osintData?.abuseipdb?.data?.isTor) signals.push('nodo TOR activo');
+    if (osintData?.otx?.pulse_count > 10) signals.push(`${osintData.otx.pulse_count} pulses OTX`);
+    if (osintData?.threatfox?.iocs?.length > 0) signals.push(`${osintData.threatfox.iocs.length} IOCs en ThreatFox`);
+    if (osintData?.shodan?.ports?.length > 5) signals.push(`${osintData.shodan.ports.length} puertos expuestos`);
+
+    let type = 'IP sin indicadores de amenaza';
+    if (score >= 80) type = 'infraestructura maliciosa activa';
+    else if (score >= 50) type = 'actividad sospechosa moderada';
+    else if (score >= 20) type = 'bajo riesgo con indicadores menores';
+
+    const confidence = score >= 70 ? 'alta' : score >= 40 ? 'media' : 'baja';
+    const evidence = signals.length > 0 ? signals.slice(0, 3).join(' + ') : 'sin evidencias de amenaza';
+
+    return {
+      summary: `Esta IP presenta ${type}.`,
+      evidence,
+      risk: level,
+      confidence
+    };
+  })();
+
+  return { score, level, factors, mitigationCommands, conclusion };
 }
 
 app.post('/api/osint/analyze', authMiddleware, async (req: any, res) => {
