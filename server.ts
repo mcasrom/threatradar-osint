@@ -122,6 +122,23 @@ const isValidTarget = (target: string): boolean => {
   return isValidIP(target) || isValidDomain(target);
 };
 
+const isPrivateIP = (ip: string): boolean => {
+  const parts = ip.split('.').map(Number);
+  if (parts[0] === 10) return true;
+  if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+  if (parts[0] === 192 && parts[1] === 168) return true;
+  if (parts[0] === 127) return true;
+  // Permitir IP propia del servidor Hetzner
+  if (ip === '178.105.80.193') return true;
+  return false;
+};
+
+const ACTIVE_SCAN_TOOLS = ['nmap', 'masscan', 'nikto', 'nuclei'];
+
+const requiresPrivateTarget = (commandTemplate: string): boolean => {
+  return ACTIVE_SCAN_TOOLS.some(tool => commandTemplate.toLowerCase().includes(tool));
+};
+
 const sanitizeTarget = (target: string): string => {
   return target.replace(/[;&|`$(){}[\]<>\\]/g, '').trim();
 };
@@ -226,6 +243,13 @@ app.post('/api/modules/run', async (req, res) => {
   }
 
   try {
+    // Opción D+A: herramientas activas solo en IPs privadas/propias
+    if (requiresPrivateTarget(mod.commandTemplate) && isValidIP(sanitizedTarget) && !isPrivateIP(sanitizedTarget)) {
+      return res.status(403).json({ 
+        error: 'Escaneo activo solo permitido en redes privadas (192.168.x.x, 10.x.x.x) o tu propio servidor. Para IPs públicas usa los módulos OSINT pasivos.'
+      });
+    }
+
     let command = mod.commandTemplate.replace('{target}', sanitizedTarget);
     
     // Security validation

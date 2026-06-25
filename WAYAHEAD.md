@@ -34,3 +34,24 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - Password: ThreatAdmin2026!
 - Plan: enterprise — scans ilimitados, todas las fuentes
 - DB: /home/deploy/apps/threatradar-osint/data/threatradar.db
+
+## SESIÓN 2026-06-25 continuación — verificación completa
+### Verificado y funcionando en producción
+- Pipeline completo: GET /api/osint/ip-full/:ip → POST /api/osint/analyze
+- Score 185.220.101.1 → 85/100 CRÍTICO (TOR exit, AbuseIPDB 100%, VT 14 engines)
+- Flujo dos pasos confirmado: ip-full devuelve osintData raw, analyze calcula score+IA
+- Engine Groq activo como fallback
+
+### Problemas detectados pendientes
+- Shodan API free: existe API pública gratuita pero limitada — investigar endpoint correcto
+- GreyNoise Community: key gratuita existe pero no disponible/accesible actualmente
+- Módulo "Análisis de Riesgo Infraestructura" — formulario no envía email al usuario
+- Resend email en este módulo: revisar endpoint y destinatario
+
+### Próximo sprint 14 (por orden)
+- [ ] Demo pública 3 scans/día sin login (rate limit por IP)
+- [ ] Fix módulo análisis infraestructura — email no llega
+- [ ] Shodan API free — investigar límites reales del plan gratuito
+- [ ] GreyNoise — reintentar cuando esté disponible
+- [ ] Jest tests endpoints principales
+- [ ] localStorage consentimiento
