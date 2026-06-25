@@ -121,3 +121,10 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] Sección módulos activos→pasivos (Opción D aplicada en UI)
 - [ ] README.md actualizar con stack real y APIs integradas
 - [ ] Textos mock/fake eliminar o reemplazar por datos reales
+
+## COMPLETADO — Demo pública Sprint 14 2026-06-25
+- POST /api/demo/scan — sin autenticación, 3 scans/día por IP
+- demoLimiter: windowMs=24h, max=3, keyGenerator=req.ip
+- Fuentes: InternetDB + AbuseIPDB + GreyNoise + IPInfo
+- Verificado: 185.220.101.1 → Score 100/100 CRÍTICO sin login
+-

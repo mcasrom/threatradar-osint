@@ -969,6 +969,20 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
       ? fetch(`https://ipinfo.io/${ip}?token=${process.env.IPINFO_API_KEY}`)
           .then(r => r.json()).then(d => { results.ipinfo = d; }).catch(e => { results.ipinfo = { error: e.message }; })
       : Promise.resolve(),
+    // AlienVault OTX — sin key
+    fetch(`https://otx.alienvault.com/api/v1/indicators/IPv4/${ip}/general`)
+      .then(r => r.json()).then(d => { results.otx = { pulse_count: d?.pulse_info?.count, reputation: d?.reputation, country: d?.country_name }; }).catch(() => {}),
+    // ThreatFox — IOCs malware
+    process.env.THREATFOX_API_KEY
+      ? fetch('https://threatfox-api.abuse.ch/api/v1/', {
+          method: 'POST',
+          headers: { 'Auth-Key': process.env.THREATFOX_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: 'search_ioc', search_term: ip })
+        }).then(r => r.json()).then(d => { results.threatfox = { status: d.query_status, iocs: d.data || [] }; }).catch(() => {})
+      : Promise.resolve(),
+    // crt.sh — subdominios via certificados
+    fetch(`https://crt.sh/?q=${ip}&output=json`)
+      .then(r => r.json()).then(d => { results.crtsh = { count: d.length, domains: [...new Set(d.map((c: any) => c.name_value))].slice(0, 10) }; }).catch(() => {}),
   ]);
   res.json(results);
 });
