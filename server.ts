@@ -155,6 +155,59 @@ const sanitizeTarget = (target: string): string => {
   return target.replace(/[;&|`$(){}[\]<>\\]/g, '').trim();
 };
 
+// --- Threat Map DB setup ---
+(function initThreatMapTable() {
+  const Database = require('better-sqlite3');
+  const _db = new Database(require('path').join(process.cwd(), 'data/threatradar.db'));
+  _db.prepare(`CREATE TABLE IF NOT EXISTS threat_map (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip TEXT NOT NULL,
+    port INTEGER,
+    lat REAL,
+    lon REAL,
+    country TEXT,
+    threat_type TEXT,
+    malware TEXT,
+    source TEXT,
+    first_seen TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`).run();
+  _db.prepare(`CREATE INDEX IF NOT EXISTS idx_threat_map_created ON threat_map(created_at)`).run();
+  _db.close();
+})();
+
+async function fetchThreatMapData() {
+  try {
+    const Database = require('better-sqlite3');
+    const _db = new Database(require('path').join(process.cwd(), 'data/threatradar.db'));
+    const tfKey = process.env.THREATFOX_API_KEY;
+    if (!tfKey) { _db.close(); return; }
+    const res = await fetch('https://threatfox-api.abuse.ch/api/v1/', {
+      method: 'POST',
+      headers: { 'Auth-Key': tfKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'get_iocs', days: 1 })
+    });
+    const data = await res.json();
+    const iocs = (data.data || []).filter((x: any) => x.ioc_type === 'ip:port').slice(0, 100);
+    _db.prepare(`DELETE FROM threat_map WHERE created_at < datetime('now', '-24 hours')`).run();
+    const insert = _db.prepare(`INSERT OR IGNORE INTO threat_map (ip, port, lat, lon, country, threat_type, malware, source, first_seen) VALUES (?,?,?,?,?,?,?,?,?)`);
+    for (const ioc of iocs) {
+      const parts = (ioc.ioc || '').split(':');
+      const ip = parts[0]; const port = parseInt(parts[1]) || 0;
+      if (!ip) continue;
+      try {
+        const geo = await fetch(`https://ipinfo.io/${ip}?token=${process.env.IPINFO_API_KEY || ''}`).then((r: any) => r.json());
+        const [lat, lon] = (geo.loc || '0,0').split(',').map(Number);
+        insert.run(ip, port, lat, lon, geo.country || '', ioc.threat_type || '', ioc.malware || '', 'threatfox', ioc.first_seen || '');
+      } catch {}
+    }
+    _db.close();
+    console.log(`[ThreatMap] Updated ${iocs.length} C2 IOCs`);
+  } catch (e: any) { console.error('[ThreatMap] Error:', e.message); }
+}
+fetchThreatMapData();
+setInterval(fetchThreatMapData, 60 * 60 * 1000);
+
 // --- API Endpoints ---
 
 // 0. Demo pública — sin auth, 3 scans/día por IP
@@ -181,6 +234,17 @@ app.post('/api/demo/scan', async (req: any, res) => {
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// 0b. Threat Map live data
+app.get('/api/threatmap/live', async (req, res) => {
+  try {
+    const Database = require('better-sqlite3');
+    const _db = new Database(path.join(process.cwd(), 'data/threatradar.db'));
+    const points = _db.prepare(`SELECT ip, port, lat, lon, country, threat_type, malware, source, first_seen FROM threat_map WHERE lat != 0 ORDER BY created_at DESC LIMIT 200`).all();
+    _db.close();
+    res.json({ points, count: points.length, updated: new Date().toISOString() });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 // 1. Health check

@@ -128,3 +128,17 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - Fuentes: InternetDB + AbuseIPDB + GreyNoise + IPInfo
 - Verificado: 185.220.101.1 → Score 100/100 CRÍTICO sin login
 -
+
+## COMPLETADO — APIs OSINT Sprint 15 parcial 2026-06-25
+- OTX AlienVault ✅ sin key — 50 pulses en 185.220.101.1
+- ThreatFox ✅ key dadccac9... — 37 IOCs, header Auth-Key correcto
+- crt.sh ✅ integrado con timeout 5s (útil para dominios, no IPs)
+- trust proxy configurado (Nginx/Cloudflare X-Forwarded-For fix)
+- THREATFOX_API_KEY añadida en .env local y producción
+
+## PENDIENTE Sprint 15
+- [ ] Live Threat Map — capas C2/malware/scanners con ThreatFox+URLHaus
+- [ ] Añadir OTX+ThreatFox al risk engine (score)
+- [ ] URLHaus integración
+- [ ] Narrativa UI actualizar
+- [ ] README actualizar
