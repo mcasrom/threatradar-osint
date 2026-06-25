@@ -86,6 +86,17 @@ app.use('/api/premium-report', reportLimiter);
 app.use('/api/reports/auto-generate', reportLimiter);
 app.use('/api/modules/run', scanLimiter);
 
+// Demo pública — 3 scans/día por IP sin login
+const demoLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 3,
+  keyGenerator: (req: any) => req.ip || 'unknown',
+  message: { error: 'Demo limit: 3 scans/día gratuitos. Regístrate para acceso ilimitado.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/demo', demoLimiter);
+
 // --- Logging Middleware ---
 app.use((req, res, next) => {
   const start = Date.now();
@@ -144,6 +155,32 @@ const sanitizeTarget = (target: string): string => {
 };
 
 // --- API Endpoints ---
+
+// 0. Demo pública — sin auth, 3 scans/día por IP
+app.post('/api/demo/scan', async (req: any, res) => {
+  const { ip } = req.body;
+  if (!ip) return res.status(400).json({ error: 'IP requerida' });
+  const target = sanitizeTarget(ip);
+  if (!isValidIP(target)) return res.status(400).json({ error: 'IP inválida' });
+  try {
+    const results: any = { ip: target, timestamp: new Date().toISOString(), demo: true };
+    await Promise.allSettled([
+      fetch(`https://internetdb.shodan.io/${target}`)
+        .then(r => r.json()).then(d => { results.shodan = d; }).catch(() => {}),
+      fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${target}&maxAgeInDays=90`, {
+        headers: { Key: process.env.ABUSEIPDB_API_KEY || '', Accept: 'application/json' }
+      }).then(r => r.json()).then(d => { results.abuseipdb = d; }).catch(() => {}),
+      fetch(`https://api.greynoise.io/v3/community/${target}`)
+        .then(r => r.json()).then(d => { results.greynoise = d; }).catch(() => {}),
+      fetch(`https://ipinfo.io/${target}?token=${process.env.IPINFO_API_KEY || ''}`)
+        .then(r => r.json()).then(d => { results.ipinfo = d; }).catch(() => {}),
+    ]);
+    const score = computeThreatScore(results);
+    res.json({ ...results, threatScore: score });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // 1. Health check
 app.get('/api/health', (req, res) => {

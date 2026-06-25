@@ -78,3 +78,46 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - Guard de apiKey eliminado en /api/osint/greynoise/:ip
 - ip-full incluye GreyNoise siempre (key opcional para plan superior)
 - Risk engine ya incluía lógica greynoise.noise y greynoise.classification
+
+## COMPLETADO — Groq fallback premium-report 2026-06-25
+- /api/premium-report ahora usa Gemini primero, Groq llama-3.3-70b como fallback
+- Verificado: engine=groq activo cuando Gemini quota agotada
+- Score y report generados correctamente
+
+## SPRINT 15 — Backlog planificado
+### APIs OSINT gratuitas de alto impacto a integrar
+- [ ] crt.sh — subdominios via certificados SSL (sin key, json directo)
+- [ ] AlienVault OTX — threat intel IPs/dominios (key gratuita fácil)
+- [ ] ThreatFox — IOCs malware activos (sin key, API pública)
+- [ ] URLHaus — URLs maliciosas (sin key, API pública)
+- [ ] URLScan.io — scan URLs/dominios (key gratuita)
+- [ ] MXToolbox — DNS/mail checks (free tier)
+
+### Resend email — problema conocido
+- Hetzner IP en blacklist para envío directo via Resend
+- Solución pendiente: routing via viajeinteligencia.com Next.js API (mismo patrón que viajeinteligencia)
+- Endpoint destino: POST /api/email/send en viajeinteligencia → reenvía via Resend
+- Afecta: /api/reports/auto-generate y módulo análisis infraestructura
+
+### Video marketing
+- Grabar demo con OBS: login → scan IP TOR → score CRÍTICO → mapa → informe IA
+- 60-90 segundos, útil para LinkedIn/Twitter/GitHub README
+- Hacer cuando demo pública esté lista
+
+### Live Threat Map — capas visuales (PRIORITARIO Sprint 15)
+- [ ] Capa Botnet C2 (rojo pulsante) — ThreatFox API, C2 activos con coords
+- [ ] Capa Malware Distribution (naranja) — URLHaus IPs activas geolocalizadas
+- [ ] Capa Mass Scanners (amarillo) — GreyNoise noise=true acumulado
+- [ ] Capa TOR Exits (morado) — AbuseIPDB isTor=true
+- [ ] Capa User Scans (cian) — IPs analizadas en sesión actual
+- [ ] Cron cada 15min → fetch fuentes → SQLite con lat/lon
+- [ ] Switch por capa en UI (patrón ya existe con heatmap)
+- [ ] Esto convierte mapa en Live Threat Map real — diferenciador marketing
+
+### Revisión narrativa/documentación (Sprint 15)
+- [ ] Revisar y actualizar TODA la narrativa de la UI (textos, descripciones módulos)
+- [ ] Actualizar fuentes documentadas (Shodan→InternetDB, añadir nuevas APIs)
+- [ ] Metodología OSINT — reflejar stack real actual
+- [ ] Sección módulos activos→pasivos (Opción D aplicada en UI)
+- [ ] README.md actualizar con stack real y APIs integradas
+- [ ] Textos mock/fake eliminar o reemplazar por datos reales
