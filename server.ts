@@ -65,6 +65,7 @@ app.use(express.json({ limit: '10mb' }));
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -73,12 +74,14 @@ const apiLimiter = rateLimit({
 const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 50,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Report generation limit reached. Try again later.' },
 });
 
 const scanLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 50,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Scan limit reached. Try again later.' },
 });
 
@@ -91,6 +94,7 @@ app.use('/api/modules/run', scanLimiter);
 const demoLimiter = rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 3,
+  validate: { xForwardedForHeader: false },
   keyGenerator: (req: any) => req.ip || 'unknown',
   message: { error: 'Demo limit: 3 scans/día gratuitos. Regístrate para acceso ilimitado.' },
   standardHeaders: true,
@@ -208,7 +212,75 @@ async function fetchThreatMapData() {
 fetchThreatMapData();
 setInterval(fetchThreatMapData, 60 * 60 * 1000);
 
+// --- URLHaus Feed DB setup ---
+(function initURLHausTable() {
+  const Database = require('better-sqlite3');
+  const _db = new Database(require('path').join(process.cwd(), 'data/threatradar.db'));
+  _db.prepare(`CREATE TABLE IF NOT EXISTS urlhaus_feed (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT UNIQUE NOT NULL,
+    url_status TEXT,
+    threat TEXT,
+    tags TEXT,
+    host TEXT,
+    date_added TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`).run();
+  _db.prepare(`CREATE INDEX IF NOT EXISTS idx_urlhaus_created ON urlhaus_feed(created_at)`).run();
+  _db.close();
+})();
+async function fetchURLHausData() {
+  try {
+    const Database = require('better-sqlite3');
+    const _db = new Database(require('path').join(process.cwd(), 'data/threatradar.db'));
+    const res = await fetch('https://urlhaus.abuse.ch/downloads/json_recent/', {
+      method: 'GET'
+    });
+    const data = await res.json();
+    // json_recent devuelve dict {host: [urls]}  — aplanar y tomar las 100 primeras online
+    const allUrls: any[] = Object.values(data).flat();
+    const urls = allUrls.filter((u: any) => u.url_status === 'online').slice(0, 100);
+    _db.prepare(`DELETE FROM urlhaus_feed WHERE created_at < datetime('now', '-48 hours')`).run();
+    const insert = _db.prepare(`INSERT OR IGNORE INTO urlhaus_feed (url, url_status, threat, tags, host, date_added) VALUES (?,?,?,?,?,?)`);
+    for (const u of urls) {
+      insert.run(
+        u.url || '',
+        u.url_status || '',
+        u.threat || '',
+        Array.isArray(u.tags) ? u.tags.join(',') : (u.tags || ''),
+        u.host || '',
+        u.dateadded || u.date_added || ''
+      );
+    }
+    _db.close();
+    console.log(`[URLHaus] Updated ${urls.length} malware URLs`);
+  } catch (e: any) { console.error('[URLHaus] Error:', e.message); }
+}
+fetchURLHausData();
+setInterval(fetchURLHausData, 6 * 60 * 60 * 1000); // cada 6h
+
+
 // --- API Endpoints ---
+
+
+// URLHaus malware URL feed
+app.get('/api/urlhaus/feed', (req: any, res) => {
+  try {
+    const Database = require('better-sqlite3');
+    const _db = new Database(require('path').join(process.cwd(), 'data/threatradar.db'));
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const threat = req.query.threat as string;
+    let query = `SELECT url, url_status, threat, tags, host, date_added, created_at FROM urlhaus_feed`;
+    const params: any[] = [];
+    if (threat) { query += ` WHERE threat = ?`; params.push(threat); }
+    query += ` ORDER BY created_at DESC LIMIT ?`;
+    params.push(limit);
+    const rows = _db.prepare(query).all(...params);
+    const stats = _db.prepare(`SELECT threat, COUNT(*) as count FROM urlhaus_feed GROUP BY threat ORDER BY count DESC`).all();
+    _db.close();
+    res.json({ total: rows.length, stats, urls: rows });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
 
 // 0. Demo pública — sin auth, 3 scans/día por IP
 app.post('/api/demo/scan', async (req: any, res) => {

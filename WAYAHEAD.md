@@ -1,193 +1,98 @@
-# ThreatRadar OSINT — WAYAHEAD
-Actualizado: 2026-06-25
+# WAYAHEAD — ThreatRadar OSINT
 
-## COMPLETADO — Sprint 13 (Deploy Hetzner) 2026-06-25
-### Infraestructura producción
-- App desplegada en https://threatradar.viajeinteligencia.com
-- PM2 id 33, nombre: threatradar, puerto 3013, ~21MB RAM
-- Nginx reverse proxy con SSL certbot (expira 2026-09-22, autorenovación activa)
-- ecosystem.config.cjs creado (node dist/server.cjs, --max-old-space-size=256)
-- DNS Cloudflare registro A threatradar → 178.105.80.193 (proxied: true)
-- WAF Cloudflare regla 883d6f63
+Registro de sprints y tareas pendientes. Actualizado: 2026-06-25.
 
-## COMPLETADO — Sprint 14 parcial (APIs OSINT) 2026-06-25
-### APIs verificadas y operativas
-- Shodan → sustituido por InternetDB (internetdb.shodan.io) — gratis, sin key, ports+CVEs+tags
-- AbuseIPDB ✅ key válida, responde correctamente
-- VirusTotal ✅ key válida, responde correctamente
-- IPInfo ✅ key válida
-- GreyNoise ❌ key vacía — pendiente conseguir en viz.greynoise.io/account/api-key
-- nmap — NO instalar en Hetzner (TOS), desactivar para IPs externas en producción
+---
 
-## PENDIENTE — Sprint 14
-- [ ] GREYNOISE_API_KEY — conseguir key gratuita Community (viz.greynoise.io)
-- [ ] Demo pública — 3 scans/día sin login (rate limit por IP, sin auth)
-- [ ] Tests Jest — smoke tests endpoints principales
-- [ ] Persistir consentimiento legal en localStorage
-- [ ] Stripe keys — plan premium (futuro)
+## ✅ Sprint 13 — Deploy inicial Hetzner
+- SSL certbot, PM2 ecosystem.config.cjs port 3013
+- Cloudflare WAF actualizado (5-rule limit)
 
-## Deploy futuro
-npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osint && git pull && npm run build && pm2 restart threatradar"
+## ✅ Sprint 14 — APIs y estabilización
+- InternetDB sustituyendo Shodan free
+- GreyNoise desbloqueado
+- Usuario dev en SQLite: dev@threatradar.local / ThreatAdmin2026! (enterprise)
+- Demo endpoint con rate limiting
+- Groq fallback para Gemini quota
 
-## CREDENCIALES DEV/TEST (producción)
-- Email: dev@threatradar.local
-- Password: ThreatAdmin2026!
-- Plan: enterprise — scans ilimitados, todas las fuentes
-- DB: /home/deploy/apps/threatradar-osint/data/threatradar.db
+## ✅ Sprint 15 — Threat Intelligence
+- APIs integradas: InternetDB, AbuseIPDB, VirusTotal, IPInfo, GreyNoise, OTX, ThreatFox (key dadccac9), crt.sh
+- Live Threat Map: tabla `threat_map` SQLite, cron hourly ThreatFox→IPInfo, 100 C2 geolocalizados
+- Endpoint `/api/threatmap/live`, refresh frontend cada 5min
+- Why Engine: conclusion {summary, evidence, risk, confidence} en computeThreatScore
+- Filtro regional mapa por país
+- Demo pública `/api/demo/scan` — 3/día por IP
 
-## SESIÓN 2026-06-25 continuación — verificación completa
-### Verificado y funcionando en producción
-- Pipeline completo: GET /api/osint/ip-full/:ip → POST /api/osint/analyze
-- Score 185.220.101.1 → 85/100 CRÍTICO (TOR exit, AbuseIPDB 100%, VT 14 engines)
-- Flujo dos pasos confirmado: ip-full devuelve osintData raw, analyze calcula score+IA
-- Engine Groq activo como fallback
+## ✅ Sprint 16 — URLHaus + Fixes (2026-06-25)
+- **Fix trust proxy** — `express-rate-limit` v7.5.0 lanzaba `ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`
+  en bucle (100% CPU, 19 reinicios). Fix: `validate: { xForwardedForHeader: false }` en los 4 limiters.
+- **URLHaus integration** — feed `json_recent` abuse.ch, 100 URLs malware activas cada 6h.
+  Tabla `urlhaus_feed` SQLite. Endpoint `/api/urlhaus/feed`.
+- **deploy.sh** en root del proyecto — flujo: `npm run build` → `rsync dist/` → `pm2 restart 33`
 
-### Problemas detectados pendientes
-- Shodan API free: existe API pública gratuita pero limitada — investigar endpoint correcto
-- GreyNoise Community: key gratuita existe pero no disponible/accesible actualmente
-- Módulo "Análisis de Riesgo Infraestructura" — formulario no envía email al usuario
-- Resend email en este módulo: revisar endpoint y destinatario
+---
 
-### Próximo sprint 14 (por orden)
-- [ ] Demo pública 3 scans/día sin login (rate limit por IP)
-- [ ] Fix módulo análisis infraestructura — email no llega
-- [ ] Shodan API free — investigar límites reales del plan gratuito
-- [ ] GreyNoise — reintentar cuando esté disponible
-- [ ] Jest tests endpoints principales
-- [ ] localStorage consentimiento
+## 🔜 Sprint 17 — ASN Clustering (PRÓXIMO)
 
-## COMPLETADO — Opción D+A módulos activos 2026-06-25
-- isPrivateIP() — permite 10.x, 172.16-31.x, 192.168.x, 127.x, 178.105.80.193
-- requiresPrivateTarget() — detecta nmap/masscan/nikto/nuclei en commandTemplate
-- /api/modules/run — bloquea herramientas activas contra IPs públicas con error claro
-- Módulos pasivos (DNS/WHOIS/SSL/theHarvester) — sin restricción de target
-- Resend email — key actualizada en prod pero Hetzner blacklist bloquea entrega (pendiente)
-- Email reports: ruta alternativa via viajeinteligencia API pendiente implementar
+### Objetivo
+Agrupar IPs del Live Threat Map por ASN/organización para identificar
+qué proveedores alojan más C2s.
 
-## PENDIENTE Sprint 14
-- [ ] Demo pública 3 scans/día sin login
-- [ ] Revisar/actualizar documentación UI módulos (Opción D: renombrar activos→pasivos)
-- [ ] Resend email fix — routing via viajeinteligencia Next.js
-- [ ] GreyNoise key cuando disponible
-- [ ] Jest tests
-- [ ] localStorage consentimiento
+### Tareas
+- [ ] Añadir columna `asn` y `org` a tabla `threat_map` (ALTER TABLE o recrear)
+- [ ] En `fetchThreatMapData()` — enriquecer cada IP con ASN via IPInfo (`/json` devuelve `org`)
+- [ ] Endpoint `/api/threatmap/asn` — top ASNs por count, con país y malware más frecuente
+- [ ] Frontend: panel "Top ASNs" en la vista del Live Threat Map
 
-## COMPLETADO — GreyNoise Community 2026-06-25
-- GreyNoise Community API funciona sin key (endpoint v3/community)
-- 185.220.101.1: noise=true, classification=malicious ✅
-- Guard de apiKey eliminado en /api/osint/greynoise/:ip
-- ip-full incluye GreyNoise siempre (key opcional para plan superior)
-- Risk engine ya incluía lógica greynoise.noise y greynoise.classification
+---
 
-## COMPLETADO — Groq fallback premium-report 2026-06-25
-- /api/premium-report ahora usa Gemini primero, Groq llama-3.3-70b como fallback
-- Verificado: engine=groq activo cuando Gemini quota agotada
-- Score y report generados correctamente
+## 📋 Pendientes generales
 
-## SPRINT 15 — Backlog planificado
-### APIs OSINT gratuitas de alto impacto a integrar
-- [ ] crt.sh — subdominios via certificados SSL (sin key, json directo)
-- [ ] AlienVault OTX — threat intel IPs/dominios (key gratuita fácil)
-- [ ] ThreatFox — IOCs malware activos (sin key, API pública)
-- [ ] URLHaus — URLs maliciosas (sin key, API pública)
-- [ ] URLScan.io — scan URLs/dominios (key gratuita)
-- [ ] MXToolbox — DNS/mail checks (free tier)
+### DNSRecon
+Mencionado en UI (`StaticInfo.tsx`), en `db.ts` como módulo activo con comando real
+(`dnsrecon -d {target} -t std,rvl,srv,axfr`), y chequeado en `server.ts` con `checkToolAvailable`.
+**No instalado en servidor.**
+```bash
+ssh deploy@178.105.80.193 "sudo apt install -y dnsrecon"
+```
 
-### Resend email — problema conocido
-- Hetzner IP en blacklist para envío directo via Resend
-- Solución pendiente: routing via viajeinteligencia.com Next.js API (mismo patrón que viajeinteligencia)
-- Endpoint destino: POST /api/email/send en viajeinteligencia → reenvía via Resend
-- Afecta: /api/reports/auto-generate y módulo análisis infraestructura
+### UI Narrative update (Sprint 17/18)
+Reemplazar textos mock/placeholder en el frontend por descripciones reales
+basadas en los datos live (URLHaus, ThreatFox, Why Engine).
 
-### Video marketing
-- Grabar demo con OBS: login → scan IP TOR → score CRÍTICO → mapa → informe IA
-- 60-90 segundos, útil para LinkedIn/Twitter/GitHub README
-- Hacer cuando demo pública esté lista
+### README update (Sprint 17/18)
+Documentar Sprint 15+16: APIs, Live Map, Why Engine, URLHaus, deploy.sh.
 
-### Live Threat Map — capas visuales (PRIORITARIO Sprint 15)
-- [ ] Capa Botnet C2 (rojo pulsante) — ThreatFox API, C2 activos con coords
-- [ ] Capa Malware Distribution (naranja) — URLHaus IPs activas geolocalizadas
-- [ ] Capa Mass Scanners (amarillo) — GreyNoise noise=true acumulado
-- [ ] Capa TOR Exits (morado) — AbuseIPDB isTor=true
-- [ ] Capa User Scans (cian) — IPs analizadas en sesión actual
-- [ ] Cron cada 15min → fetch fuentes → SQLite con lat/lon
-- [ ] Switch por capa en UI (patrón ya existe con heatmap)
-- [ ] Esto convierte mapa en Live Threat Map real — diferenciador marketing
+### Resend email (pospuesto)
+Hetzner IP bloqueada por Resend. Solución: proxy via `/api/send-alert`
+en viajeinteligencia.com Next.js que reenvía a Resend desde IP no bloqueada.
 
-### Revisión narrativa/documentación (Sprint 15)
-- [ ] Revisar y actualizar TODA la narrativa de la UI (textos, descripciones módulos)
-- [ ] Actualizar fuentes documentadas (Shodan→InternetDB, añadir nuevas APIs)
-- [ ] Metodología OSINT — reflejar stack real actual
-- [ ] Sección módulos activos→pasivos (Opción D aplicada en UI)
-- [ ] README.md actualizar con stack real y APIs integradas
-- [ ] Textos mock/fake eliminar o reemplazar por datos reales
+---
 
-## COMPLETADO — Demo pública Sprint 14 2026-06-25
-- POST /api/demo/scan — sin autenticación, 3 scans/día por IP
-- demoLimiter: windowMs=24h, max=3, keyGenerator=req.ip
-- Fuentes: InternetDB + AbuseIPDB + GreyNoise + IPInfo
-- Verificado: 185.220.101.1 → Score 100/100 CRÍTICO sin login
--
+## 🏗️ Stack
 
-## COMPLETADO — APIs OSINT Sprint 15 parcial 2026-06-25
-- OTX AlienVault ✅ sin key — 50 pulses en 185.220.101.1
-- ThreatFox ✅ key dadccac9... — 37 IOCs, header Auth-Key correcto
-- crt.sh ✅ integrado con timeout 5s (útil para dominios, no IPs)
-- trust proxy configurado (Nginx/Cloudflare X-Forwarded-For fix)
-- THREATFOX_API_KEY añadida en .env local y producción
+| Componente | Detalle |
+|---|---|
+| Servidor | Hetzner Ubuntu, IP 178.105.80.193 |
+| App dir | `/home/deploy/apps/threatradar-osint` |
+| PM2 | id 33, nombre `threatradar` |
+| Puerto | 3013 |
+| URL | https://threatradar.viajeinteligencia.com |
+| DB | SQLite `data/threatradar.db` |
+| Deploy | `./deploy.sh` desde root del proyecto |
+| Build | `vite build + esbuild server.ts → dist/server.cjs` |
 
-## PENDIENTE Sprint 15
-- [ ] Live Threat Map — capas C2/malware/scanners con ThreatFox+URLHaus
-- [ ] Añadir OTX+ThreatFox al risk engine (score)
-- [ ] URLHaus integración
-- [ ] Narrativa UI actualizar
-- [ ] README actualizar
+## 🔑 APIs configuradas
 
-## COMPLETADO — Live Threat Map Sprint 15 parcial 2026-06-25
-- Tabla threat_map en SQLite (ip, port, lat, lon, country, threat_type, malware)
-- Cron hourly: ThreatFox get_iocs → geolocalize via IPInfo → SQLite
-- 100 C2 activos geolocalizados en primera ejecución
-- Endpoint GET /api/threatmap/live — devuelve 200 puntos max
-- App.tsx useEffect carga C2 reales en mapa, refresh cada 5min
-- Mapa muestra alertas reales ThreatFox en lugar de datos mock
-- ThreatFox key: dadccac9... (Auth-Key header)
-- URLHaus pendiente (formato diferente, investigar)
-
-## PENDIENTE Sprint 15
-- [ ] Verificar visualmente mapa con puntos C2 reales en UI
-- [ ] Añadir campo malware al tipo ThreatAlert en types.ts
-- [ ] Capas visuales diferenciadas por color (C2 rojo, scanner amarillo, TOR morado)
-- [ ] URLHaus integración (malware distribution naranja)
-- [ ] OTX + ThreatFox añadir al risk engine computeThreatScore()
-- [ ] Narrativa UI actualizar (textos fake → reales)
-- [ ] README.md actualizar stack real
-- [ ] Resend email fix via viajeinteligencia proxy
-
-## COMPLETADO — Why Engine 2026-06-25
-- computeThreatScore() ahora devuelve conclusion: {summary, evidence, risk, confidence}
-- Lógica automática sin IA: GreyNoise + AbuseIPDB + OTX + ThreatFox + Shodan
-- Ejemplo 185.220.101.1: "infraestructura maliciosa activa", confianza alta
-- Diferenciador producto: interpretación OSINT vs datos OSINT raw
-
-## PRÓXIMA SESIÓN — Sprint 15 continuación
-- [ ] Mostrar conclusion en UI (IPTesterAndManual.tsx)
-- [ ] Capas mapa por color (C2 rojo, TOR morado, scanner amarillo)
-- [ ] URLHaus integración
-- [ ] Narrativa UI actualizar textos fake
-- [ ] README actualizar
-- [ ] Resend fix via viajeinteligencia proxy
-
-## COMPLETADO — Filtro regional mapa 2026-06-25
-- Botones región ahora filtran C2 activos por país
-- regionCountries: NA/SA/Europa/Asia/África/Australia
-- filteredAlerts reemplaza alerts en todos los renders
-- GLOBAL muestra todos los 100 C2
-- Informe infraestructura: backend OK (Groq), frontend caché — pendiente hard refresh
-
-## PENDIENTE Sprint 15
-- [ ] Mostrar conclusion/why engine en UI
-- [ ] Clustering ASN en mapa
-- [ ] URLHaus
-- [ ] Narrativa UI textos fake → reales
-- [ ] README
-- [ ] Resend proxy
+| API | Key | Estado |
+|---|---|---|
+| ThreatFox | dadccac9 (Auth-Key header) | ✅ |
+| IPInfo | en .env | ✅ |
+| AbuseIPDB | en .env | ✅ |
+| VirusTotal | en .env | ✅ |
+| Groq | en .env | ✅ fallback Gemini |
+| Gemini | en .env | ⚠️ quota agotada |
+| GreyNoise | sin key | ✅ free tier |
+| OTX | sin key | ✅ free tier |
+| URLHaus | sin key | ✅ público |
+| Resend | bloqueado desde Hetzner | ⏸️ pospuesto |
