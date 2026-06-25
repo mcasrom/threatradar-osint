@@ -43,6 +43,36 @@ export default function App() {
       .catch(() => setServerStatus({ status: 'offline' }));
   }, []);
 
+  // Cargar C2 activos reales desde ThreatFox via API
+  useEffect(() => {
+    const loadThreatMap = () => {
+      fetch('/api/threatmap/live')
+        .then(res => res.json())
+        .then(data => {
+          if (data.points && data.points.length > 0) {
+            const mapped: ThreatAlert[] = data.points.map((p: any) => ({
+              id: `tf-${p.ip}-${p.port}`,
+              sourceIp: p.ip,
+              latitude: p.lat,
+              longitude: p.lon,
+              country: p.country || 'Unknown',
+              attackType: p.threat_type || 'botnet_cc',
+              severity: 'critical' as const,
+              timestamp: p.first_seen || new Date().toISOString(),
+              malware: p.malware || '',
+              port: p.port,
+              source: 'ThreatFox'
+            }));
+            setAlerts(mapped.slice(0, 50));
+          }
+        })
+        .catch(() => {});
+    };
+    loadThreatMap();
+    const interval = setInterval(loadThreatMap, 5 * 60 * 1000); // refresh cada 5min
+    return () => clearInterval(interval);
+  }, []);
+
   const handleTriggerAlert = (newAlert: ThreatAlert) => {
     setAlerts((prev) => [newAlert, ...prev].slice(0, 50));
   };
