@@ -71,3 +71,10 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] GreyNoise key cuando disponible
 - [ ] Jest tests
 - [ ] localStorage consentimiento
+
+## COMPLETADO — GreyNoise Community 2026-06-25
+- GreyNoise Community API funciona sin key (endpoint v3/community)
+- 185.220.101.1: noise=true, classification=malicious ✅
+- Guard de apiKey eliminado en /api/osint/greynoise/:ip
+- ip-full incluye GreyNoise siempre (key opcional para plan superior)
+- Risk engine ya incluía lógica greynoise.noise y greynoise.classification

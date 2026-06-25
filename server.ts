@@ -319,19 +319,31 @@ app.post('/api/premium-report', async (req, res) => {
          4. ANTIBOTNET DEFENSE PROTOCOLS
          5. ACTIONABLE REMEDIATION PLAN`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-      config: {
-        systemInstruction: 'Act as a military-grade security analyst. Provide high-fidelity technical advice in Spanish/English.',
+    let reportText = '';
+    let engine = 'gemini';
+    try {
+      const gRes = await ai.models.generateContent({
+        model: 'gemini-2.0-flash', contents: prompt,
+        config: { systemInstruction: 'Act as a military-grade security analyst. Provide high-fidelity technical advice in Spanish/English.' }
+      });
+      reportText = gRes.text || '';
+    } catch {
+      if (groq) {
+        engine = 'groq';
+        const gqRes = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: 'Act as a military-grade security analyst. Provide high-fidelity technical advice in Spanish/English.' },
+            { role: 'user', content: prompt }
+          ], max_tokens: 2000
+        });
+        reportText = gqRes.choices[0]?.message?.content || '';
       }
-    });
-
-    const reportText = response.text || 'No response generated.';
+    }
+    if (!reportText) reportText = 'No response generated.';
     const scoreMatch = reportText.match(/(score|puntuación|postura|health)[:\s]+(\d+)/i);
     const score = scoreMatch ? parseInt(scoreMatch[2]) : 68;
-
-    res.json({ report: reportText, score });
+    res.json({ report: reportText, score, engine });
   } catch (err: any) {
     res.status(500).json({ error: err?.message || 'Error generating AI report.' });
   }
