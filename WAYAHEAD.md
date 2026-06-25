@@ -176,3 +176,18 @@ npm run build → git push → ssh deploy "cd /home/deploy/apps/threatradar-osin
 - [ ] Narrativa UI actualizar textos fake
 - [ ] README actualizar
 - [ ] Resend fix via viajeinteligencia proxy
+
+## COMPLETADO — Filtro regional mapa 2026-06-25
+- Botones región ahora filtran C2 activos por país
+- regionCountries: NA/SA/Europa/Asia/África/Australia
+- filteredAlerts reemplaza alerts en todos los renders
+- GLOBAL muestra todos los 100 C2
+- Informe infraestructura: backend OK (Groq), frontend caché — pendiente hard refresh
+
+## PENDIENTE Sprint 15
+- [ ] Mostrar conclusion/why engine en UI
+- [ ] Clustering ASN en mapa
+- [ ] URLHaus
+- [ ] Narrativa UI textos fake → reales
+- [ ] README
+- [ ] Resend proxy

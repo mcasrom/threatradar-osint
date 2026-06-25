@@ -24,6 +24,7 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     level: 'CRITICO' | 'ALTO' | 'MEDIO' | 'BAJO';
     factors: string[];
     mitigationCommands: { label: string; cmd: string }[];
+    conclusion?: { summary: string; evidence: string; risk: string; confidence: string };
   } | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
@@ -553,6 +554,17 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
                   <Activity size={10} className="mt-0.5 text-brand-cyan shrink-0" />{f}
                 </div>
               ))}
+            </div>
+          )}
+          {threatScore.conclusion && (
+            <div className="bg-[#0a1628] border border-brand-cyan/30 rounded p-3 space-y-1">
+              <div className="text-[10px] font-mono text-brand-cyan font-bold">CONCLUSIÓN INTELIGENCIA</div>
+              <div className="text-[11px] font-mono text-white">{threatScore.conclusion.summary}</div>
+              <div className="text-[10px] font-mono text-zinc-400">Evidencia: {threatScore.conclusion.evidence}</div>
+              <div className="flex gap-3 mt-1">
+                <span className="text-[9px] font-mono text-zinc-500">RIESGO: <span className="text-red-400">{threatScore.conclusion.risk}</span></span>
+                <span className="text-[9px] font-mono text-zinc-500">CONFIANZA: <span className="text-brand-cyan">{threatScore.conclusion.confidence}</span></span>
+              </div>
             </div>
           )}
           <div className="space-y-2">
