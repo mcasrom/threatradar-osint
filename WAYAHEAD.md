@@ -96,3 +96,19 @@ en viajeinteligencia.com Next.js que reenvía a Resend desde IP no bloqueada.
 | OTX | sin key | ✅ free tier |
 | URLHaus | sin key | ✅ público |
 | Resend | bloqueado desde Hetzner | ⏸️ pospuesto |
+
+---
+
+## 💡 Ideas futuras (backlog)
+
+### Módulo Auditoría/Benchmark
+Comparar ThreatRadar vs soluciones similares (Shodan, VirusTotal UI, AbuseIPDB)
+en métricas de cobertura, velocidad de respuesta, fuentes integradas.
+Panel interno con scores comparativos.
+
+### Mapa geográfico — ventana independiente
+Botón "Abrir mapa en ventana nueva" → `window.open('/threatmap', '_blank')`
+Vista limpia solo con el mapa, sin sidebar, útil para presentaciones/monitores secundarios.
+
+### DNSRecon — instalación pendiente
+Ver sección Pendientes generales.
