@@ -112,3 +112,6 @@ Vista limpia solo con el mapa, sin sidebar, útil para presentaciones/monitores 
 
 ### DNSRecon — instalación pendiente
 Ver sección Pendientes generales.
+
+### ✅ DNSRecon — COMPLETADO (Sprint 17)
+Instalado v1.1.5, detectado por Node, en DB servidor, endpoint /api/modules/run ejecuta real.
