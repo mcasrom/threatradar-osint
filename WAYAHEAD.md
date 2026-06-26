@@ -131,3 +131,9 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - CRON_SECRET añadido al .env de threatradar-osint en servidor
 - Email confirmado llegando via Resend ✅
 - deploy.sh PM2 id corregido 33→8
+
+## ✅ Sprint 17c — Telegram + Mapa ventana (2026-06-26)
+- Bot @Threatradar_osint_bot creado, canal @ThreatRadar_Osint (chat_id: -1004403719037)
+- Alertas Telegram al generar reporte via sendTelegramAlert()
+- Mapa ventana independiente: botón VENTANA + /?mode=map standalone
+- TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en .env servidor
