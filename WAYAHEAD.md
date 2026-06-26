@@ -123,3 +123,11 @@ Instalado v1.1.5, detectado por Node, en DB servidor, endpoint /api/modules/run 
 - DNSRecon v1.1.5 verificado funcional (instalado, en DB, endpoint real)
 
 Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Tencent CN (6 C2s)
+
+## ✅ Sprint 17b — Resend proxy + fixes (2026-06-26)
+- Proxy `/api/send-alert` creado en viaje-con-inteligencia (Next.js)
+- Cloudflare WAF regla "Challenge bots" actualizada para excluir `/api/send-alert`
+- ThreatRadar server.ts usa `https://www.viajeinteligencia.com/api/send-alert` (evita redirect 301)
+- CRON_SECRET añadido al .env de threatradar-osint en servidor
+- Email confirmado llegando via Resend ✅
+- deploy.sh PM2 id corregido 33→8
