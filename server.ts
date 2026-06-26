@@ -194,7 +194,7 @@ async function fetchThreatMapData() {
     const data = await res.json();
     const iocs = (data.data || []).filter((x: any) => x.ioc_type === 'ip:port').slice(0, 100);
     _db.prepare(`DELETE FROM threat_map WHERE created_at < datetime('now', '-24 hours')`).run();
-    const insert = _db.prepare(`INSERT OR IGNORE INTO threat_map (ip, port, lat, lon, country, threat_type, malware, source, first_seen) VALUES (?,?,?,?,?,?,?,?,?)`);
+    const insert = _db.prepare(`INSERT OR IGNORE INTO threat_map (ip, port, lat, lon, country, threat_type, malware, source, first_seen, asn, org) VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
     for (const ioc of iocs) {
       const parts = (ioc.ioc || '').split(':');
       const ip = parts[0]; const port = parseInt(parts[1]) || 0;
@@ -202,7 +202,11 @@ async function fetchThreatMapData() {
       try {
         const geo = await fetch(`https://ipinfo.io/${ip}?token=${process.env.IPINFO_API_KEY || ''}`).then((r: any) => r.json());
         const [lat, lon] = (geo.loc || '0,0').split(',').map(Number);
-        insert.run(ip, port, lat, lon, geo.country || '', ioc.threat_type || '', ioc.malware || '', 'threatfox', ioc.first_seen || '');
+        const orgRaw = geo.org || '';
+        const asnMatch = orgRaw.match(/^(AS\d+)\s+(.*)/);
+        const asn = asnMatch ? asnMatch[1] : '';
+        const org = asnMatch ? asnMatch[2] : orgRaw;
+        insert.run(ip, port, lat, lon, geo.country || '', ioc.threat_type || '', ioc.malware || '', 'threatfox', ioc.first_seen || '', asn, org);
       } catch {}
     }
     _db.close();
@@ -316,6 +320,27 @@ app.get('/api/threatmap/live', async (req, res) => {
     const points = _db.prepare(`SELECT ip, port, lat, lon, country, threat_type, malware, source, first_seen FROM threat_map WHERE lat != 0 ORDER BY created_at DESC LIMIT 200`).all();
     _db.close();
     res.json({ points, count: points.length, updated: new Date().toISOString() });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// ASN Clustering endpoint
+app.get('/api/threatmap/asn', async (req, res) => {
+  try {
+    const Database = require('better-sqlite3');
+    const _db = new Database(path.join(process.cwd(), 'data/threatradar.db'));
+    const rows = _db.prepare(`
+      SELECT asn, org, country,
+             COUNT(*) as count,
+             GROUP_CONCAT(DISTINCT malware) as malwares
+      FROM threat_map
+      WHERE asn IS NOT NULL AND asn != ''
+      GROUP BY asn, org
+      ORDER BY count DESC
+      LIMIT 20
+    `).all();
+    const total = _db.prepare(`SELECT COUNT(*) as n FROM threat_map WHERE asn != '' AND asn IS NOT NULL`).get();
+    _db.close();
+    res.json({ asns: rows, total: total?.n || 0, updated: new Date().toISOString() });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 

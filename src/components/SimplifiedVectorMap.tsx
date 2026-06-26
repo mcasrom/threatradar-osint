@@ -10,6 +10,15 @@ interface GeoMapProps {
 
 export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAlert, onHoverAlert }) => {
   const [selectedRegion, setSelectedRegion] = useState<string>('GLOBAL');
+  const [asnData, setAsnData] = useState<any[]>([]);
+  const [showAsn, setShowAsn] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetch('/api/threatmap/asn')
+      .then(r => r.json())
+      .then(d => setAsnData(d.asns || []))
+      .catch(() => {});
+  }, []);
   const [viewHeatmap, setViewHeatmap] = useState<boolean>(true);
   const [selectedAlertForInspection, setSelectedAlertForInspection] = useState<ThreatAlert | null>(null);
 
@@ -452,6 +461,31 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
         </div>
       </div>
 
+      {/* ASN Clustering Panel */}
+      <div className="border-t border-brand-border/60 pt-3">
+        <button
+          onClick={() => setShowAsn(!showAsn)}
+          className="flex items-center gap-2 text-[11px] text-zinc-400 hover:text-brand-green transition-colors mb-2"
+        >
+          <Activity size={12} className="text-brand-green" />
+          <span className="font-bold tracking-wider">TOP ASN C2 HOSTING</span>
+          <span className="text-zinc-600">{showAsn ? '▲' : '▼'}</span>
+        </button>
+        {showAsn && (
+          <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto">
+            {asnData.slice(0, 10).map((row: any, i: number) => (
+              <div key={i} className="flex items-center justify-between bg-zinc-900/60 rounded px-2 py-1 border border-brand-border/40">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[9px] text-zinc-500 font-mono w-16 shrink-0">{row.asn}</span>
+                  <span className="text-[10px] text-zinc-300 truncate">{row.org}</span>
+                  <span className="text-[9px] text-zinc-500 shrink-0">{row.country}</span>
+                </div>
+                <span className="text-[10px] font-bold text-brand-red shrink-0 ml-2">{row.count} C2s</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

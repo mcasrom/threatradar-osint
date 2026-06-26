@@ -9,7 +9,7 @@ NC='\033[0m'
 
 SERVER="deploy@178.105.80.193"
 REMOTE_DIR="/home/deploy/apps/threatradar-osint"
-PM2_ID="33"
+PM2_ID="8"
 
 echo -e "${COLOR_BLUE}=== [THREATRADAR OSINT - DEPLOY] ===${NC}"
 
