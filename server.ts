@@ -591,7 +591,7 @@ Previous Reports: ${existingReports.length}`;
       emailStatus = 'Resend no configurado. Añade RESEND_API_KEY al .env';
     } else {
       try {
-        const proxyRes = await fetch('https://viajeinteligencia.com/api/send-alert', {
+        const proxyRes = await fetch('https://www.viajeinteligencia.com/api/send-alert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
