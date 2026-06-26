@@ -180,6 +180,19 @@ const sanitizeTarget = (target: string): string => {
   _db.close();
 })();
 
+async function sendTelegramAlert(message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'HTML' })
+    });
+  } catch (e: any) { console.error('[Telegram]', e.message); }
+}
+
 async function fetchThreatMapData() {
   try {
     const Database = require('better-sqlite3');
@@ -627,6 +640,9 @@ Previous Reports: ${existingReports.length}`;
       webhookStatus = whRes.ok ? `Webhook OK (${isDiscord ? "Discord" : "Slack"})` : `Webhook error ${whRes.status}`;
     } catch (e: any) { webhookStatus = `Webhook error: ${e.message}`; }
   }
+  // Telegram
+  await sendTelegramAlert(`⬡ <b>ThreatRadar SOC — ${period.toUpperCase()} REPORT</b>\n📋 ID: ${newReport.id}\n🌐 Módulos activos: ${modules.length}`);
+
   db.logReports.unshift(newReport);
   writeDB(db);
 
