@@ -137,3 +137,24 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - Alertas Telegram al generar reporte via sendTelegramAlert()
 - Mapa ventana independiente: botón VENTANA + /?mode=map standalone
 - TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en .env servidor
+
+## ✅ Sprint 17d — Fixes y herramientas (2026-06-26)
+- Groq fallback en auto-generate report (Gemini quota agotada)
+- Email con contenido real via Groq ✅
+- Telegram alerts funcionando al generar reporte ✅
+- Herramientas instaladas en servidor: nmap, dnsrecon, whois, dig (ya existían) + traceroute, masscan, nikto (nuevas)
+- Mapa ventana independiente ✅ botón VENTANA + /?mode=map
+- Bot Telegram: @Threatradar_osint_bot, canal: @ThreatRadar_Osint, chat_id: -1004403719037
+
+## 📋 Pendientes próxima sesión
+
+### ThreatRadar
+- [ ] Marcar en UI qué módulos están realmente instalados vs decorativos
+- [ ] Instalar herramientas restantes: subfinder, httpx, nuclei, amass, theHarvester
+- [ ] UI narrative update — reemplazar textos mock por datos reales
+- [ ] README update Sprint 15-17
+- [ ] Módulo auditoría/benchmark vs soluciones similares
+- [ ] Telegram: enriquecer mensaje con top ASNs del día
+
+### Infraestructura
+- [ ] PM2 save para que el id 8 persista tras reinicios
