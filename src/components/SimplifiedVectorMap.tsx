@@ -11,6 +11,7 @@ interface GeoMapProps {
 export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAlert, onHoverAlert }) => {
   const [selectedRegion, setSelectedRegion] = useState<string>('GLOBAL');
   const [asnData, setAsnData] = useState<any[]>([]);
+  const openMapWindow = () => window.open('/?mode=map', '_blank', 'width=1200,height=800,scrollbars=yes');
   const [showAsn, setShowAsn] = useState<boolean>(false);
 
   useEffect(() => {
@@ -67,6 +68,16 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAler
     <div id="geographical-vector-map-panel" className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 shadow-xl relative overflow-hidden">
       
       {/* Top Header controls */}
+      <div className="absolute top-3 right-3 z-10">
+        <button
+          onClick={openMapWindow}
+          title="Abrir mapa en ventana independiente"
+          className="flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700 border border-brand-border/60 rounded text-[10px] text-zinc-400 hover:text-brand-green transition-colors font-mono"
+        >
+          <Maximize2 size={11} />
+          VENTANA
+        </button>
+      </div>
       <div className="flex flex-wrap justify-between items-center gap-2 pb-3 border-b border-brand-border/60 w-full">
         <div>
           <h3 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">

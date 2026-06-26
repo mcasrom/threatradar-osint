@@ -29,6 +29,9 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  // Modo ventana independiente: /?mode=map
+  const isMapOnly = new URLSearchParams(window.location.search).get('mode') === 'map';
+
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
   const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard'>('monitor');
@@ -149,6 +152,23 @@ Reportes programados por email (SMTP) y webhooks.`;
     URL.revokeObjectURL(url);
     setTimeout(() => setDownloadSuccess(false), 3000);
   };
+
+  // Render standalone map window
+  if (isMapOnly) {
+    return (
+      <div className="min-h-screen bg-brand-bg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-brand-green font-mono text-sm font-bold">⬡ THREATRADAR — LIVE THREAT MAP</span>
+          <span className="text-zinc-500 text-xs font-mono">{new Date().toUTCString()}</span>
+        </div>
+        <SimplifiedVectorMap
+          alerts={alerts}
+          hoveredAlert={hoveredAlert}
+          onHoverAlert={setHoveredAlert}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-brand-bg text-zinc-100 flex flex-col justify-between font-sans selection:bg-brand-cyan selection:text-black">
