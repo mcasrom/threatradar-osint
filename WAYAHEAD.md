@@ -110,8 +110,6 @@ Panel interno con scores comparativos.
 Botón "Abrir mapa en ventana nueva" → `window.open('/threatmap', '_blank')`
 Vista limpia solo con el mapa, sin sidebar, útil para presentaciones/monitores secundarios.
 
-### DNSRecon — instalación pendiente
-Ver sección Pendientes generales.
 
 ### ✅ DNSRecon — COMPLETADO (Sprint 17)
 Instalado v1.1.5, detectado por Node, en DB servidor, endpoint /api/modules/run ejecuta real.
