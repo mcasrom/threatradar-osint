@@ -591,21 +591,26 @@ Previous Reports: ${existingReports.length}`;
       emailStatus = 'Resend no configurado. Añade RESEND_API_KEY al .env';
     } else {
       try {
-        await resend.emails.send({
-          from: 'ThreatRadar SOC <alerts@viajeinteligencia.com>',
-          to: emailTo,
-          subject: `[ThreatRadar] ${period.toUpperCase()} Security Report - ${newReport.id}`,
-          html: `<div style="font-family:monospace;padding:24px;background:#0c1322;color:#f4f4f5;border-radius:8px">
-            <h2 style="color:#00f2ff;margin-bottom:4px">ThreatRadar SOC Report</h2>
-            <p style="color:#8b949e;font-size:12px">ID: ${newReport.id} | ${new Date().toUTCString()}</p>
-            <hr style="border-color:#1e2d3d;margin:16px 0">
-            <pre style="background:#090e17;padding:16px;border-radius:4px;font-size:12px;white-space:pre-wrap">${analysisText}</pre>
-            <p style="color:#8b949e;font-size:11px">ThreatRadar OSINT &mdash; alerts@viajeinteligencia.com</p>
-          </div>`
+        const proxyRes = await fetch('https://viajeinteligencia.com/api/send-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: process.env.CRON_SECRET || '',
+            to: emailTo,
+            subject: `[ThreatRadar] ${period.toUpperCase()} Security Report - ${newReport.id}`,
+            html: `<div style="font-family:monospace;padding:24px;background:#0c1322;color:#f4f4f5;border-radius:8px">
+              <h2 style="color:#00f2ff;margin-bottom:4px">ThreatRadar SOC Report</h2>
+              <p style="color:#8b949e;font-size:12px">ID: ${newReport.id} | ${new Date().toUTCString()}</p>
+              <hr style="border-color:#1e2d3d;margin:16px 0">
+              <pre style="background:#090e17;padding:16px;border-radius:4px;font-size:12px;white-space:pre-wrap">${analysisText}</pre>
+              <p style="color:#8b949e;font-size:11px">ThreatRadar OSINT &mdash; alerts@viajeinteligencia.com</p>
+            </div>`
+          })
         });
-        emailStatus = `Email enviado a ${emailTo} via Resend`;
+        const proxyData = await proxyRes.json();
+        emailStatus = proxyRes.ok ? `Email enviado a ${emailTo} via proxy` : `Proxy error: ${proxyData.error}`;
       } catch (err: any) {
-        emailStatus = `Resend error: ${err?.message}`;
+        emailStatus = `Proxy error: ${err?.message}`;
       }
     }
   }
