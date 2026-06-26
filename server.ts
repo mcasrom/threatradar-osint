@@ -585,7 +585,17 @@ Previous Reports: ${existingReports.length}`;
       });
       if (gRes.text) analysisText = gRes.text;
     } catch {
-      // Fallback
+      // Fallback Groq
+      if (groq) {
+        try {
+          const gqRes = await groq.chat.completions.create({
+            model: 'llama-3.1-8b-instant',
+            messages: [{ role: 'user', content: `Generate a ${period} cybersecurity OSINT summary report. Active modules: ${modules.length}. Focus on threat intelligence findings and mitigation recommendations. Markdown format.` }],
+            max_tokens: 800
+          });
+          analysisText = gqRes.choices[0]?.message?.content || analysisText;
+        } catch {}
+      }
     }
   }
 
