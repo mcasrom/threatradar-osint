@@ -1,5 +1,25 @@
 # WAYAHEAD — ThreatRadar OSINT
 
+
+## Sprint 18 — Telegram Alerts Integration ✅ [2026-06-26]
+
+### Completado
+- [x] Endpoint `/api/alerts/telegram` (POST) en server.ts
+  - Acepta `message`, `ip`, `score`, `level`
+  - Emoji automático por nivel (🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW)
+  - Formato Markdown con parse_mode
+- [x] Trigger automático en `/api/modules/run` → alerta si score HIGH/CRITICAL
+- [x] Trigger automático en `/api/osint/analyze` → alerta si score HIGH/CRITICAL
+- [x] Canal @ThreatRadar_Osint (`-1004403719037`) confirmado operativo
+- [x] Variables TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID en .env servidor
+
+### Pendiente Sprint 19
+- [ ] UI narrative update (reemplazar textos mock en frontend)
+- [ ] Map window enhancements
+- [ ] README actualización
+- [ ] Benchmark/audit module
+
+
 Registro de sprints y tareas pendientes. Actualizado: 2026-06-25.
 
 ---

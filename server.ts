@@ -319,6 +319,15 @@ app.post('/api/demo/scan', async (req: any, res) => {
         .then(r => r.json()).then(d => { results.ipinfo = d; }).catch(() => {}),
     ]);
     const score = computeThreatScore(results);
+    // Telegram alert si HIGH o CRITICAL
+    if (score.level === 'HIGH' || score.level === 'CRITICAL') {
+      const alertMsg = `Scan completado\nFactores: ${score.factors.join(', ')}\nConclusión: ${score.conclusion}`;
+      fetch(`http://localhost:${process.env.PORT || 3013}/api/alerts/telegram`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: alertMsg, ip: target, score: score.score, level: score.level })
+      }).catch(() => {});
+    }
     res.json({ ...results, threatScore: score });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1050,12 +1059,46 @@ function computeThreatScore(osintData: any): {
   return { score, level, factors, mitigationCommands, conclusion };
 }
 
+
+app.post('/api/alerts/telegram', async (req, res) => {
+  const { message, ip, score, level } = req.body;
+  if (!message) return res.status(400).json({ error: "message requerido" });
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return res.status(500).json({ error: "Telegram no configurado" });
+  const emoji = level === "CRITICAL" ? "🔴" : level === "HIGH" ? "🟠" : level === "MEDIUM" ? "🟡" : "🟢";
+  const text = ip && score
+    ? emoji + " *ThreatRadar Alert*\n\nIP: `" + ip + "`\nScore: " + score + " — " + level + "\n\n" + message
+    : "🛡️ *ThreatRadar*\n\n" + message;
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" })
+    });
+    const data = await r.json();
+    if (!data.ok) return res.status(500).json({ error: data.description });
+    res.json({ ok: true, message_id: data.result.message_id });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/osint/analyze', authMiddleware, async (req: any, res) => {
   const { osintData } = req.body;
   if (!osintData || !osintData.ip) return res.status(400).json({ error: 'osintData requerido' });
 
   // Calcular ThreatScore antes del análisis IA
   const threatScore = computeThreatScore(osintData);
+  // Telegram alert si HIGH o CRITICAL
+  if (threatScore.level === 'HIGH' || threatScore.level === 'CRITICAL') {
+    const alertMsg = `Análisis OSINT completado\nFactores: ${threatScore.factors.join(', ')}\nConclusión: ${threatScore.conclusion}`;
+    fetch(`http://localhost:${process.env.PORT || 3013}/api/alerts/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: alertMsg, ip: osintData.ip, score: threatScore.score, level: threatScore.level })
+    }).catch(() => {});
+  }
 
   // Construir resumen de fuentes disponibles para el prompt
   const sourceSummary = [
