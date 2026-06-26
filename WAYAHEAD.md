@@ -113,3 +113,13 @@ Vista limpia solo con el mapa, sin sidebar, útil para presentaciones/monitores 
 
 ### ✅ DNSRecon — COMPLETADO (Sprint 17)
 Instalado v1.1.5, detectado por Node, en DB servidor, endpoint /api/modules/run ejecuta real.
+
+## ✅ Sprint 17 — ASN Clustering (2026-06-26)
+- Columnas `asn` y `org` añadidas a tabla `threat_map` SQLite
+- `fetchThreatMapData()` enriquece cada IP con ASN via IPInfo (`geo.org`)
+- Endpoint `/api/threatmap/asn` — top 20 ASNs por count con país y malware
+- Panel "TOP ASN C2 HOSTING" en SimplifiedVectorMap — colapsable, top 10
+- deploy.sh actualizado PM2 id 33→8
+- DNSRecon v1.1.5 verificado funcional (instalado, en DB, endpoint real)
+
+Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Tencent CN (6 C2s)
