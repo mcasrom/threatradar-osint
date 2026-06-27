@@ -8,6 +8,7 @@ import { AutoReportsManager } from './components/AutoReportsManager';
 import { MonetizationPanel } from './components/MonetizationPanel';
 import { FAQs, About, Methodology, Sources } from './components/StaticInfo';
 import { AuthPanel } from './components/AuthPanel';
+import { AuditPanel } from './components/AuditPanel';
 import { PricingPage } from './components/PricingPage';
 import { UserDashboard } from './components/UserDashboard';
 import { ThreatAlert } from './types';
@@ -34,7 +35,7 @@ export default function App() {
 
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
-  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit'>('monitor');
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<any>(null);
@@ -270,6 +271,14 @@ Reportes programados por email (SMTP) y webhooks.`;
             }`}
           >
             <BookOpen size={14} /> FAQs & Metodología
+          </button>
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`flex-1 py-2 px-3 text-xs font-sans font-semibold rounded-md transition flex justify-center items-center gap-2 ${
+              activeTab === 'audit' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
+            }`}
+          >
+            <Activity size={14} /> Auditoría
           </button>
         </div>
 

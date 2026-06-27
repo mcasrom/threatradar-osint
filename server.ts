@@ -1250,6 +1250,163 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
   res.json(results);
 });
 
+
+// ═══════════════════════════════════════════════════════════
+// MÓDULO AUDITORÍA / BENCHMARK — Sprint 19
+// ═══════════════════════════════════════════════════════════
+
+app.get('/api/audit/stats', async (_req, res) => {
+  try {
+    const sdb = (await import('./src/sqlite.js')).default;
+
+    const c2Count    = (() => { try { return (sdb.prepare('SELECT COUNT(*) as n FROM threat_map').get() as any)?.n ?? 0; } catch { return 0; } })();
+    const ufCount    = (() => { try { return (sdb.prepare('SELECT COUNT(*) as n FROM urlhaus_feed').get() as any)?.n ?? 0; } catch { return 0; } })();
+    const usersCount = (() => { try { return (sdb.prepare('SELECT COUNT(*) as n FROM users').get() as any)?.n ?? 0; } catch { return 0; } })();
+    const scansCount = (() => { try { return (sdb.prepare('SELECT COUNT(*) as n FROM scan_history').get() as any)?.n ?? 0; } catch { return 0; } })();
+
+    const scoreDistrib = { critical: 0, high: 0, medium: 0, low: 0 };
+    try {
+      const rows = sdb.prepare('SELECT threat_score FROM scan_history').all() as any[];
+      rows.forEach((r: any) => {
+        const sc = r.threat_score || 0;
+        if      (sc >= 80) scoreDistrib.critical++;
+        else if (sc >= 60) scoreDistrib.high++;
+        else if (sc >= 30) scoreDistrib.medium++;
+        else               scoreDistrib.low++;
+      });
+    } catch {}
+
+    const topCountries = (() => {
+      try {
+        return sdb.prepare(
+          'SELECT country, COUNT(*) as count FROM threat_map WHERE country IS NOT NULL GROUP BY country ORDER BY count DESC LIMIT 5'
+        ).all();
+      } catch { return []; }
+    })() as { country: string; count: number }[];
+
+    const topAsns = (() => {
+      try {
+        return sdb.prepare(
+          'SELECT org, COUNT(*) as count FROM threat_map WHERE org IS NOT NULL GROUP BY org ORDER BY count DESC LIMIT 5'
+        ).all();
+      } catch { return []; }
+    })() as { org: string; count: number }[];
+
+    const tools = ['nmap', 'dnsrecon', 'whois', 'nikto', 'traceroute', 'masscan'];
+    const toolStatus: Record<string, boolean> = {};
+    await Promise.all(tools.map(async (t) => {
+      try {
+        await new Promise<void>((ok, ko) =>
+          require('child_process').exec(`which ${t}`, (err: any) => err ? ko(err) : ok())
+        );
+        toolStatus[t] = true;
+      } catch { toolStatus[t] = false; }
+    }));
+
+    res.json({
+      totals: {
+        c2_tracked:       c2Count,
+        urlhaus_urls:     ufCount,
+        users_registered: usersCount,
+        scans_total:      scansCount,
+      },
+      score_distribution: scoreDistrib,
+      top_countries:      topCountries,
+      top_asns:           topAsns,
+      tool_status:        toolStatus,
+      apis_configured: {
+        abuseipdb:  !!process.env.ABUSEIPDB_API_KEY,
+        virustotal: !!process.env.VIRUSTOTAL_API_KEY,
+        ipinfo:     !!process.env.IPINFO_API_KEY,
+        threatfox:  !!process.env.THREATFOX_API_KEY,
+        groq:       !!process.env.GROQ_API_KEY,
+        gemini:     !!process.env.GEMINI_API_KEY,
+        telegram:   !!process.env.TELEGRAM_BOT_TOKEN,
+      },
+      generated_at: new Date().toISOString(),
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/audit/benchmark', authMiddleware, async (req: any, res) => {
+  const { ip } = req.body;
+  if (!ip || !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip))
+    return res.status(400).json({ error: 'IP inválida' });
+
+  const results: any = { ip, timestamp: new Date().toISOString(), sources: {} };
+
+  const time = async (label: string, fn: () => Promise<any>) => {
+    const t0 = Date.now();
+    try   { results.sources[label] = { ok: true,  ms: Date.now() - t0, data: await fn() }; }
+    catch (e: any) { results.sources[label] = { ok: false, ms: Date.now() - t0, error: e.message }; }
+  };
+
+  await Promise.all([
+    time('InternetDB', async () => {
+      const r = await fetch(`https://internetdb.shodan.io/${ip}`); return r.json();
+    }),
+    time('AbuseIPDB', async () => {
+      if (!process.env.ABUSEIPDB_API_KEY) throw new Error('Sin API key');
+      const r = await fetch(
+        `https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`,
+        { headers: { 'Key': process.env.ABUSEIPDB_API_KEY!, 'Accept': 'application/json' } }
+      );
+      const d = await r.json();
+      return { score: d?.data?.abuseConfidenceScore, reports: d?.data?.totalReports, isp: d?.data?.isp };
+    }),
+    time('VirusTotal', async () => {
+      if (!process.env.VIRUSTOTAL_API_KEY) throw new Error('Sin API key');
+      const r = await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`,
+        { headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY! } });
+      const d = await r.json();
+      const s = d?.data?.attributes?.last_analysis_stats;
+      return { malicious: s?.malicious || 0, suspicious: s?.suspicious || 0, harmless: s?.harmless || 0 };
+    }),
+    time('GreyNoise', async () => {
+      const r = await fetch(`https://api.greynoise.io/v3/community/${ip}`);
+      const d = await r.json();
+      return { classification: d?.classification, noise: d?.noise, riot: d?.riot };
+    }),
+    time('OTX', async () => {
+      const r = await fetch(`https://otx.alienvault.com/api/v1/indicators/IPv4/${ip}/general`);
+      const d = await r.json();
+      return { pulses: d?.pulse_info?.count || 0, reputation: d?.reputation };
+    }),
+    time('ThreatFox', async () => {
+      if (!process.env.THREATFOX_API_KEY) throw new Error('Sin API key');
+      const r = await fetch('https://threatfox-api.abuse.ch/api/v1/', {
+        method: 'POST',
+        headers: { 'Auth-Key': process.env.THREATFOX_API_KEY!, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'search_ioc', search_term: ip }),
+      });
+      const d = await r.json();
+      return { status: d.query_status, ioc_count: (d.data || []).length };
+    }),
+  ]);
+
+  let trScore = 0;
+  const s = results.sources;
+  if (s.AbuseIPDB?.ok)  trScore += Math.min(40, (s.AbuseIPDB.data.score  || 0) * 0.4);
+  if (s.VirusTotal?.ok) trScore += Math.min(30, (s.VirusTotal.data.malicious || 0) * 5);
+  if (s.OTX?.ok && s.OTX.data.pulses > 0) trScore += Math.min(20, s.OTX.data.pulses * 2);
+  if (s.ThreatFox?.ok && s.ThreatFox.data.ioc_count > 0) trScore += 10;
+
+  const keys      = Object.keys(results.sources);
+  const sourcesOk = Object.values(results.sources).filter((v: any) => v.ok).length;
+  const avgMs     = Math.round(
+    Object.values(results.sources).reduce((acc: number, v: any) => acc + (v.ms || 0), 0) / keys.length
+  );
+
+  results.summary = {
+    threatradar_score: Math.round(trScore),
+    sources_queried:   keys.length,
+    sources_ok:        sourcesOk,
+    avg_response_ms:   avgMs,
+    coverage_pct:      Math.round((sourcesOk / keys.length) * 100),
+  };
+  res.json(results);
+});
+
 // Vite Middleware
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
