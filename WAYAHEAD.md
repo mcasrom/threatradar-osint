@@ -252,3 +252,11 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] pip install theHarvester en Hetzner
 - [ ] README update Sprint 15-21
 - [ ] UI narrative update — textos reales en StaticInfo.tsx
+
+## ✅ Sprint 21b — Fix build + Legal visible (2026-06-27)
+- [x] Fix coma faltante en lucide-react imports (Mail, Scale)
+- [x] Bundle index-eDha8SIQ.js — nuevo hash confirmado
+- [x] Tab Legal visible en producción ✅
+- [x] pm2 save ejecutado — id 8 persistirá tras reinicios
+- [x] Instalados en Hetzner: nmap dnsrecon nikto whois traceroute dig masscan
+- [x] Pendiente instalar: wafw00f subfinder httpx nuclei amass theHarvester
