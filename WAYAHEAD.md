@@ -260,3 +260,22 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [x] pm2 save ejecutado — id 8 persistirá tras reinicios
 - [x] Instalados en Hetzner: nmap dnsrecon nikto whois traceroute dig masscan
 - [x] Pendiente instalar: wafw00f subfinder httpx nuclei amass theHarvester
+
+## ✅ Sprint 23 — Herramientas servidor (2026-06-27)
+- [x] httpx v2.14.0 — ~/go/bin/httpx ✅
+- [x] subfinder — ~/go/bin/subfinder ✅  
+- [x] wafw00f v2.4.2 — pip ✅
+- [x] Limpieza disco: /tmp/go-build* eliminado → 77%→71%
+- [x] PATH ~/go/bin añadido a .env PM2
+- [ ] theHarvester real — pip instala stub v0.0.1, necesita instalación manual desde GitHub
+- [ ] nuclei — no instalado, demasiado pesado, marcar unavailable en UI
+- [ ] amass — no instalado, marcar unavailable en UI
+- [ ] db.ts — actualizar status real de módulos (unavailable vs active)
+
+## 📋 Sprint 24 — Próxima sesión
+- [ ] Tabla comparativa dinámica en AuditPanel (SQLite + review mensual Telegram)
+- [ ] Historial scan_history retención por plan (Free 7d / Pro 90d / Ent 365d)
+- [ ] CSP fix — static.cloudflareinsights.com
+- [ ] theHarvester real desde GitHub releases
+- [ ] db.ts módulos — status real vs decorativo
+- [ ] README update Sprint 15-23
