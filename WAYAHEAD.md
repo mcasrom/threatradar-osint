@@ -178,3 +178,13 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 
 ### Infraestructura
 - [ ] PM2 save para que el id 8 persista tras reinicios
+
+## ✅ Sprint 19b — Fix audit/stats SQLite real (2026-06-27)
+- [x] better-sqlite3 COUNT directo por número de línea (bypass readDB JSON)
+- [x] Datos confirmados en producción:
+  - C2s rastreados: 3.477 | URLHaus: 141 | Usuarios: 2
+  - Top ASN: CTG Server Ltd (294), 12651980 Canada (278), DigitalOcean (243)
+  - Top países: US (1154), HK (678), CN (338), NL (322), DE (236)
+- [x] Todas las herramientas CLI activas: nmap dnsrecon nikto masscan traceroute whois
+- [x] Todas las APIs configuradas: abuseipdb virustotal ipinfo threatfox groq gemini telegram
+- [x] Commit 48d2426 — Sprint 19 completo en GitHub
