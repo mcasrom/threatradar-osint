@@ -1407,6 +1407,88 @@ app.post('/api/audit/benchmark', authMiddleware, async (req: any, res) => {
   res.json(results);
 });
 
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIAL ROTACIONAL PREMIUM — Sprint 24
+// ═══════════════════════════════════════════════════════════
+
+// Crear tabla scan_history si no existe
+(async () => {
+  try {
+    const sdb = (await import('./src/sqlite.js')).default;
+    sdb.exec(`
+      CREATE TABLE IF NOT EXISTS scan_history (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        ip TEXT NOT NULL,
+        threat_score INTEGER,
+        threat_level TEXT,
+        country TEXT,
+        isp TEXT,
+        summary TEXT,
+        sources_ok INTEGER,
+        created_at TEXT NOT NULL
+      )
+    `);
+    console.log('[scan_history] Tabla lista');
+  } catch (e: any) { console.error('[scan_history] Error creando tabla:', e.message); }
+})();
+
+// Retención por plan en días
+const RETENTION_DAYS: Record<string, number> = { free: 7, pro: 90, enterprise: 365 };
+
+// Guardar scan en historial (llamado internamente tras /api/osint/ip-full)
+async function saveScanHistory(userId: string, plan: string, ip: string, result: any, threatScore: any) {
+  try {
+    const sdb = (await import('./src/sqlite.js')).default;
+    const id  = `sh-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+    sdb.prepare(`
+      INSERT INTO scan_history (id, user_id, ip, threat_score, threat_level, country, isp, summary, sources_ok, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, userId, ip,
+      threatScore?.score ?? null,
+      threatScore?.level ?? null,
+      result?.ipinfo?.country ?? null,
+      (result?.ipinfo?.org ?? '').slice(0, 80),
+      threatScore?.conclusion?.summary?.slice(0, 300) ?? null,
+      Object.values(result || {}).filter((v: any) => v && !v.error && typeof v === 'object').length,
+      new Date().toISOString()
+    );
+    // Purgar entradas antiguas según plan
+    const cutoff = new Date(Date.now() - (RETENTION_DAYS[plan] || 7) * 86400000).toISOString();
+    sdb.prepare('DELETE FROM scan_history WHERE user_id = ? AND created_at < ?').run(userId, cutoff);
+  } catch (e: any) { console.error('[scan_history] Error guardando:', e.message); }
+}
+
+// GET /api/history — historial del usuario autenticado
+app.get('/api/history', authMiddleware, async (req: any, res) => {
+  try {
+    const sdb  = (await import('./src/sqlite.js')).default;
+    const user = req.user;
+    const plan = user.plan || 'free';
+    const limit = plan === 'enterprise' ? 500 : plan === 'pro' ? 200 : 20;
+    const rows = sdb.prepare(
+      'SELECT * FROM scan_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+    ).all(user.id, limit);
+    res.json({
+      history: rows,
+      plan,
+      retention_days: RETENTION_DAYS[plan] || 7,
+      total: rows.length,
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/history/:id — eliminar entrada del historial
+app.delete('/api/history/:id', authMiddleware, async (req: any, res) => {
+  try {
+    const sdb = (await import('./src/sqlite.js')).default;
+    sdb.prepare('DELETE FROM scan_history WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+    res.json({ ok: true });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // Vite Middleware
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');
