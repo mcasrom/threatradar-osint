@@ -9,6 +9,7 @@ import { MonetizationPanel } from './components/MonetizationPanel';
 import { FAQs, About, Methodology, Sources } from './components/StaticInfo';
 import { AuthPanel } from './components/AuthPanel';
 import { AuditPanel } from './components/AuditPanel';
+import { LegalPanel } from './components/LegalPanel';
 import { PricingPage } from './components/PricingPage';
 import { UserDashboard } from './components/UserDashboard';
 import { ThreatAlert } from './types';
@@ -27,6 +28,7 @@ import {
   AlertOctagon,
   BookOpen,
   Mail
+  Scale,
 } from 'lucide-react';
 
 export default function App() {
@@ -35,7 +37,7 @@ export default function App() {
 
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
-  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit' | 'legal'>('monitor');
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<any>(null);
@@ -280,6 +282,14 @@ Reportes programados por email (SMTP) y webhooks.`;
           >
             <Activity size={14} /> Auditoría
           </button>
+          <button
+            onClick={() => setActiveTab('legal')}
+            className={`flex-1 py-2 px-3 text-xs font-sans font-semibold rounded-md transition flex justify-center items-center gap-2 ${
+              activeTab === 'legal' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
+            }`}
+          >
+            <Scale size={14} /> Legal
+          </button>
         </div>
 
         {/* Tab content */}
@@ -376,7 +386,6 @@ Reportes programados por email (SMTP) y webhooks.`;
           {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('billing')} />}
           {activeTab === 'dashboard' && <UserDashboard onNavigateToPricing={() => setActiveTab('pricing')} />}
 
-          {activeTab === 'audit' && <AuditPanel />}
 
 
           {activeTab === 'docs' && (
@@ -389,6 +398,9 @@ Reportes programados por email (SMTP) y webhooks.`;
               </div>
             </div>
           )}
+          {activeTab === 'audit' && <AuditPanel />}
+
+          {activeTab === 'legal' && <LegalPanel />}
         </div>
       </main>
 
