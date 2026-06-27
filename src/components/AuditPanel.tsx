@@ -34,7 +34,7 @@ export function AuditPanel() {
   const runBenchmark = async () => {
     if (!benchIp.trim()) return;
     setBenchLoading(true); setBenchError(''); setBenchResult(null);
-    const token = localStorage.getItem('threatradar_token');
+    const token = localStorage.getItem('tr_token');
     try {
       const r = await fetch('/api/audit/benchmark', {
         method: 'POST',
