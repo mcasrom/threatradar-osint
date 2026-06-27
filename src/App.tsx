@@ -376,6 +376,9 @@ Reportes programados por email (SMTP) y webhooks.`;
           {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('billing')} />}
           {activeTab === 'dashboard' && <UserDashboard onNavigateToPricing={() => setActiveTab('pricing')} />}
 
+          {activeTab === 'audit' && <AuditPanel />}
+
+
           {activeTab === 'docs' && (
             <div className="space-y-6">
               <FAQs />
