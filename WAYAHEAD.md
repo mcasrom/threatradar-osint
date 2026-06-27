@@ -279,3 +279,9 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] theHarvester real desde GitHub releases
 - [ ] db.ts módulos — status real vs decorativo
 - [ ] README update Sprint 15-23
+
+## ✅ Limpieza disco Hetzner (2026-06-27)
+- [x] ~/.cache/go-build eliminado — 1.9GB liberados
+- [x] ~/.cache/Cypress eliminado — 679MB liberados  
+- [x] ~/.cache/pip eliminado — 146MB liberados
+- [x] Disco: 77% → 63% (14GB libres)
