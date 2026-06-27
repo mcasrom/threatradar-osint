@@ -1490,6 +1490,98 @@ app.delete('/api/history/:id', authMiddleware, async (req: any, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ═══════════════════════════════════════════════════════════
+// WAF RECOMMENDATIONS ENGINE — Sprint 25
+// ═══════════════════════════════════════════════════════════
+
+app.post('/api/waf/recommend', authMiddleware, async (req: any, res) => {
+  try {
+    const { ip, osint_data } = req.body;
+    if (!ip) return res.status(400).json({ error: 'IP requerida' });
+
+    let data = osint_data || {};
+    if (!osint_data) {
+      const [internetdb, greynoise, abuseipdb] = await Promise.all([
+        fetch(`https://internetdb.shodan.io/${ip}`).then(r => r.json()).catch(() => ({})),
+        fetch(`https://api.greynoise.io/v3/community/${ip}`).then(r => r.json()).catch(() => ({})),
+        process.env.ABUSEIPDB_API_KEY
+          ? fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
+              headers: { 'Key': process.env.ABUSEIPDB_API_KEY!, 'Accept': 'application/json' }
+            }).then(r => r.json()).catch(() => ({}))
+          : Promise.resolve({})
+      ]);
+      data = { shodan: internetdb, greynoise, abuseipdb };
+    }
+
+    const recommendations: { priority: string; category: string; rule: string; reason: string; command?: string }[] = [];
+    const ports: number[] = data.shodan?.ports || [];
+    const vulns: string[] = data.shodan?.vulns  || [];
+    const tags: string[]  = data.shodan?.tags   || [];
+
+    if (ports.includes(22))
+      recommendations.push({ priority: 'HIGH', category: 'Access Control', rule: 'Bloquear SSH público', reason: 'Puerto 22 expuesto — vector de fuerza bruta', command: `ufw deny from ${ip} to any port 22` });
+    if (ports.includes(3389))
+      recommendations.push({ priority: 'CRITICAL', category: 'Access Control', rule: 'Bloquear RDP', reason: 'Puerto 3389 (RDP) expuesto — alto riesgo ransomware', command: `ufw deny from ${ip} to any port 3389` });
+    if (ports.includes(445))
+      recommendations.push({ priority: 'CRITICAL', category: 'Access Control', rule: 'Bloquear SMB', reason: 'Puerto 445 (SMB) expuesto — vector EternalBlue/ransomware', command: `ufw deny from ${ip} to any port 445` });
+    if (ports.includes(23))
+      recommendations.push({ priority: 'CRITICAL', category: 'Access Control', rule: 'Bloquear Telnet', reason: 'Puerto 23 (Telnet) sin cifrado — credenciales en claro', command: `ufw deny from ${ip} to any port 23` });
+    if (ports.includes(1433) || ports.includes(3306) || ports.includes(5432))
+      recommendations.push({ priority: 'HIGH', category: 'Database Exposure', rule: 'Bloquear puertos DB', reason: `BD expuesta públicamente (${ports.filter((p: number) => [1433,3306,5432].includes(p)).join(',')})`, command: `ufw deny from ${ip} to any port 1433,3306,5432` });
+    if (vulns.length > 0)
+      recommendations.push({ priority: 'CRITICAL', category: 'CVE', rule: 'CVEs detectados — parchear inmediatamente', reason: `CVEs activos: ${vulns.slice(0,5).join(', ')}` });
+    if (tags.includes('tor'))
+      recommendations.push({ priority: 'HIGH', category: 'Anonymizer', rule: 'Bloquear nodo Tor', reason: 'IP identificada como nodo Tor de salida', command: `ufw deny from ${ip}` });
+    if (tags.includes('vpn'))
+      recommendations.push({ priority: 'MEDIUM', category: 'Anonymizer', rule: 'Monitorizar VPN', reason: 'IP asociada a servicio VPN — posible evasión' });
+    if (tags.includes('scanner'))
+      recommendations.push({ priority: 'HIGH', category: 'Scanner', rule: 'Bloquear scanner conocido', reason: 'IP clasificada como scanner activo por Shodan', command: `ufw deny from ${ip}` });
+
+    const gn = data.greynoise || {};
+    if (gn.classification === 'malicious')
+      recommendations.push({ priority: 'CRITICAL', category: 'Threat Intel', rule: 'IP maliciosa confirmada GreyNoise', reason: `GreyNoise: ${gn.name || 'actor malicioso'} — bloqueo inmediato`, command: `ufw deny from ${ip}` });
+    if (gn.classification === 'benign' && gn.noise)
+      recommendations.push({ priority: 'LOW', category: 'Scanner', rule: 'IP scanner benigno (GreyNoise)', reason: `${gn.name || 'scanner'} — considerar allowlist si es legítimo` });
+    if (gn.riot === true)
+      recommendations.push({ priority: 'INFO', category: 'Allowlist', rule: 'IP en RIOT — servicio legítimo conocido', reason: `GreyNoise RIOT: ${gn.name || 'servicio conocido'} — probablemente no bloquear` });
+
+    const abuse = data.abuseipdb?.data || {};
+    if ((abuse.abuseConfidenceScore || 0) >= 80)
+      recommendations.push({ priority: 'CRITICAL', category: 'Threat Intel', rule: 'IP con alto abuse score', reason: `AbuseIPDB: ${abuse.abuseConfidenceScore}% confianza, ${abuse.totalReports} reportes`, command: `ufw deny from ${ip}` });
+    else if ((abuse.abuseConfidenceScore || 0) >= 40)
+      recommendations.push({ priority: 'HIGH', category: 'Threat Intel', rule: 'IP sospechosa AbuseIPDB', reason: `AbuseIPDB: ${abuse.abuseConfidenceScore}% confianza — monitorizar` });
+
+    const cfRules: string[] = [];
+    if (gn.classification === 'malicious' || (abuse.abuseConfidenceScore || 0) >= 80)
+      cfRules.push(`Crear regla WAF Cloudflare: (ip.src eq ${ip}) → Block`);
+    if (ports.includes(80) || ports.includes(443))
+      cfRules.push('Activar Cloudflare Bot Fight Mode para tráfico web desde esta IP');
+    if (vulns.length > 0)
+      cfRules.push('Activar Cloudflare Managed Rules (OWASP) — CVEs detectados en host');
+
+    if (cfRules.length === 0 && recommendations.length === 0)
+      recommendations.push({ priority: 'INFO', category: 'General', rule: 'Sin amenazas detectadas', reason: 'No se identificaron indicadores de riesgo en esta IP' });
+
+    const order: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
+    recommendations.sort((a, b) => (order[a.priority] ?? 9) - (order[b.priority] ?? 9));
+
+    res.json({
+      ip,
+      recommendations,
+      cloudflare_rules: cfRules,
+      summary: {
+        total: recommendations.length,
+        critical: recommendations.filter(r => r.priority === 'CRITICAL').length,
+        high: recommendations.filter(r => r.priority === 'HIGH').length,
+        ports_analyzed: ports.length,
+        vulns_found: vulns.length,
+      },
+      generated_at: new Date().toISOString()
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
 // Vite Middleware
 async function startServer() {
   const distPath = path.join(process.cwd(), 'dist');

@@ -322,3 +322,18 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] theHarvester real desde GitHub releases
 - [ ] WAF recommendations endpoint /api/waf/recommend
 - [ ] README update Sprint 15-24
+
+## ✅ Sprint 25b — WAF Recommendations Engine (2026-06-28)
+- [x] Endpoint POST /api/waf/recommend — authMiddleware
+- [x] Análisis basado en: InternetDB ports/vulns/tags, GreyNoise classification, AbuseIPDB score
+- [x] Reglas por prioridad: CRITICAL/HIGH/MEDIUM/LOW/INFO
+- [x] Comandos ufw listos para copiar por recomendación
+- [x] Cloudflare WAF rules sugeridas automáticamente
+- [x] Testado en producción: 185.220.101.1 → 2x CRITICAL ✅
+
+## 📋 Sprint 26 — Pendientes
+- [ ] WAFPanel.tsx — UI para /api/waf/recommend integrada en App.tsx
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] Análisis y mejora de informes IA generados
+- [ ] theHarvester — test real en producción con dominio de prueba
+- [ ] README update Sprint 15-25
