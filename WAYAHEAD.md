@@ -188,3 +188,42 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [x] Todas las herramientas CLI activas: nmap dnsrecon nikto masscan traceroute whois
 - [x] Todas las APIs configuradas: abuseipdb virustotal ipinfo threatfox groq gemini telegram
 - [x] Commit 48d2426 — Sprint 19 completo en GitHub
+
+## ✅ Sprint 20 — UX Guiado + Rediseño IPTester (2026-06-27)
+
+### Completado
+- [x] Hero IP input — campo grande centrado, Enter o botón Analizar
+- [x] Score card inmediato — 0-100 con color, país, ISP, ciudad, conclusión Why Engine
+- [x] Login gate — usuario sin sesión ve prompt registro, no error críptico
+- [x] Free tier — score + análisis IA, sin datos raw
+- [x] Pro tier — acordeón colapsable por fuente (8 fuentes) + comandos mitigación
+- [x] Upsell card para free — CTA hacia planes visible tras resultado
+- [x] Manual de operación eliminado del flujo principal
+- [x] Auto-inject en mapa al analizar IP
+
+### Credenciales desarrollo
+- Dev user: dev@threatradar.local / ThreatAdmin2026! (plan enterprise)
+- Plan enterprise: acceso completo a todas las funciones
+
+## 📋 Sprint 21 — Pendientes próxima sesión
+
+### ThreatRadar — alta prioridad
+- [ ] ToS / Aviso Legal — tab estático con límites Hetzner explícitos
+- [ ] nmap restringido por ToS — solo IPs privadas o IP propia del usuario
+- [ ] Historial premium scan_history — retención Free 7d / Pro 90d / Ent 365d
+- [ ] Panel historial con evolución de scores por IP
+- [ ] Tabla competidores dinámica — SQLite + review mensual Telegram día 1
+- [ ] apt install subfinder httpx nuclei amass + pip theHarvester en Hetzner
+- [ ] UI narrative update — textos reales en StaticInfo.tsx
+- [ ] README update Sprint 15-20
+- [ ] pm2 save — persistir id 8 tras reinicios
+- [ ] CSP fix — añadir static.cloudflareinsights.com a connect-src en server.ts
+
+### Stack / infra
+- App: ~/threatradar-osint (local) → deploy SSH deploy@178.105.80.193
+- PM2 id 8, puerto 3013, URL: threatradar.viajeinteligencia.com
+- Deploy: npm run build → rsync dist/ → rsync server.ts → pm2 restart 8 → CF purge
+- SQLite: /home/deploy/apps/threatradar-osint/data/threatradar.db
+- Telegram alerts: @Threatradar_osint_bot → canal @ThreatRadar_Osint (-1004403719037)
+- Resend proxy: https://www.viajeinteligencia.com/api/send-alert
+- CF_ZONE_ID en ~/.cf_env
