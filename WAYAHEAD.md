@@ -337,3 +337,18 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] Análisis y mejora de informes IA generados
 - [ ] theHarvester — test real en producción con dominio de prueba
 - [ ] README update Sprint 15-25
+
+## ✅ Sprint 26 — WAFPanel + Mejora informes IA (2026-06-28)
+- [x] WAFPanel.tsx — UI completa con prioridades, comandos copiables, reglas Cloudflare
+- [x] Tab WAF integrado en App.tsx
+- [x] Prompt CTI mejorado — structuredData selectivo (OTX/ThreatFox/crtsh/AbuseIPDB categories)
+- [x] Executive Summary añadido como sección 0
+- [x] max_tokens 4000 (antes 3000)
+- [x] Fix Array.isArray para threatfox_iocs
+- [x] Informes verificados en producción — calidad notablemente mejorada
+
+## 📋 Sprint 27 — Pendientes
+- [ ] abuseipdb_categories no llega — revisar estructura reports en ip-full
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] theHarvester — test real con dominio de prueba
+- [ ] README update Sprint 15-26
