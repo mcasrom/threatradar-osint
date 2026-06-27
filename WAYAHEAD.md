@@ -296,3 +296,18 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [x] Sprint 23 — httpx v2.14.0, subfinder, wafw00f instalados en Hetzner
 - [x] Disco Hetzner: 77% → 63% (limpieza go-build/Cypress/pip cache)
 - [ ] PENDIENTE: conectar saveScanHistory() al endpoint /api/osint/ip-full
+
+## ✅ Sprint 24 completado (2026-06-27)
+- [x] saveScanHistory() conectado a /api/osint/ip-full (línea 1250)
+- [x] Cada análisis OSINT completo guarda en scan_history SQLite
+- [x] Retención automática por plan al guardar (purga entradas antiguas)
+- [x] Tab Historial visible en producción
+- [x] Commit 0d7c000
+
+## 📋 Sprint 25 — Pendientes
+- [ ] CSP fix: añadir static.cloudflareinsights.com a script-src en server.ts
+- [ ] Tabla comparativa competidores dinámica en AuditPanel (SQLite + review mensual Telegram)
+- [ ] theHarvester real desde GitHub releases
+- [ ] nuclei/amass — marcar unavailable en db.ts
+- [ ] README update Sprint 15-24
+- [ ] WAF recommendations endpoint /api/waf/recommend
