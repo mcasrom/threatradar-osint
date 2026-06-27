@@ -72,7 +72,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'theHarvester OSINT',
         description: 'Recolección de emails, subdominios, IPs y hosts desde motores de búsqueda.',
         version: '4.6.0',
-        status: 'unavailable',
+        status: 'active',
         commandTemplate: 'theHarvester -d {target} -b google,bing,duckduckgo -l 500',
         outputFormat: 'text',
         category: 'osint'
