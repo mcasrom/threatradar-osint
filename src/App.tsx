@@ -27,7 +27,7 @@ import {
   FileSpreadsheet,
   AlertOctagon,
   BookOpen,
-  Mail
+  Mail,
   Scale,
 } from 'lucide-react';
 
