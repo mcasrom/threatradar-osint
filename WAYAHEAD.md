@@ -352,3 +352,18 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] Tabla comparativa competidores dinámica en AuditPanel
 - [ ] theHarvester — test real con dominio de prueba
 - [ ] README update Sprint 15-26
+
+## 📋 Sprint 27 — Mapa + Competidores + Fixes (próxima sesión)
+
+### Mapa D3.js (SimplifiedVectorMap.tsx — rediseño completo)
+- ThreatAlert ya tiene latitude/longitude reales ✅
+- Stack: D3.js (ya disponible) + TopoJSON world (~200KB)
+- Mejoras: geografía real reconocible, puntos lat/lng precisos, animaciones amenazas, stats en tiempo real junto al mapa, estética profesional
+- Archivo: src/components/SimplifiedVectorMap.tsx (502 líneas, reemplazar completo)
+- TopoJSON source: https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json
+
+### Otros pendientes Sprint 27
+- [ ] abuseipdb_categories no llega al prompt — revisar estructura reports en /api/osint/ip-full
+- [ ] Tabla comparativa competidores dinámica en AuditPanel (SQLite + review mensual)
+- [ ] theHarvester — test real con dominio de prueba en servidor
+- [ ] README update Sprint 15-26
