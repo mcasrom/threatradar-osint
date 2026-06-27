@@ -72,7 +72,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'theHarvester OSINT',
         description: 'Recolección de emails, subdominios, IPs y hosts desde motores de búsqueda.',
         version: '4.6.0',
-        status: 'active',
+        status: 'unavailable',
         commandTemplate: 'theHarvester -d {target} -b google,bing,duckduckgo -l 500',
         outputFormat: 'text',
         category: 'osint'
@@ -152,7 +152,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'Nuclei Template Scanner',
         description: 'Escaneo de vulnerabilidades basado en templates (CVEs, misconfigs, exposures).',
         version: '3.3.0',
-        status: 'active',
+        status: 'unavailable',
         commandTemplate: 'nuclei -u {target} -t cves,misconfigurations,exposures -silent',
         outputFormat: 'json',
         category: 'vulnerability'
@@ -162,7 +162,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'OWASP Amass',
         description: 'Mapeo de superficie de ataque y descubrimiento de activos mediante OSINT.',
         version: '4.2.0',
-        status: 'active',
+        status: 'unavailable',
         commandTemplate: 'amass enum -passive -d {target}',
         outputFormat: 'text',
         category: 'osint'

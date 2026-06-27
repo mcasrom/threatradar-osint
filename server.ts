@@ -42,11 +42,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.ipify.org", "http://ip-api.com", "https://ip-api.com", "ws://localhost:24678", "wss://localhost:24678"],
+      connectSrc: ["'self'", "https://api.ipify.org", "http://ip-api.com", "https://ip-api.com", "ws://localhost:24678", "wss://localhost:24678", "https://static.cloudflareinsights.com"],
     },
   },
   hsts: false,

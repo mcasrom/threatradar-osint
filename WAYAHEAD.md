@@ -311,3 +311,14 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] nuclei/amass — marcar unavailable en db.ts
 - [ ] README update Sprint 15-24
 - [ ] WAF recommendations endpoint /api/waf/recommend
+
+## ✅ Sprint 25a — CSP fix + db.ts módulos (2026-06-27)
+- [x] CSP fix — static.cloudflareinsights.com añadido a script-src y connect-src en server.ts
+- [x] db.ts — nuclei, amass, theHarvester marcados como unavailable (no instalados)
+- [x] Deploy confirmado en producción
+
+## 📋 Sprint 25b — Pendientes
+- [ ] Tabla comparativa competidores dinámica en AuditPanel (SQLite + review mensual Telegram)
+- [ ] theHarvester real desde GitHub releases
+- [ ] WAF recommendations endpoint /api/waf/recommend
+- [ ] README update Sprint 15-24
