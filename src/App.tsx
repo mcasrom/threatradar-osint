@@ -11,6 +11,7 @@ import { AuthPanel } from './components/AuthPanel';
 import { AuditPanel } from './components/AuditPanel';
 import { LegalPanel } from './components/LegalPanel';
 import { ScanHistoryPanel } from './components/ScanHistoryPanel';
+import { WAFPanel } from './components/WAFPanel';
 import { PricingPage } from './components/PricingPage';
 import { UserDashboard } from './components/UserDashboard';
 import { ThreatAlert } from './types';
@@ -38,7 +39,7 @@ export default function App() {
 
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
-  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit' | 'legal' | 'historial'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit' | 'legal' | 'historial' | 'waf'>('monitor');
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<any>(null);
@@ -299,6 +300,14 @@ Reportes programados por email (SMTP) y webhooks.`;
           >
             <Activity size={14} /> Historial
           </button>
+          <button
+            onClick={() => setActiveTab('waf')}
+            className={`flex-1 py-2 px-3 text-xs font-sans font-semibold rounded-md transition flex justify-center items-center gap-2 ${
+              activeTab === 'waf' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
+            }`}
+          >
+            <Shield size={14} /> WAF
+          </button>
         </div>
 
         {/* Tab content */}
@@ -423,6 +432,8 @@ Reportes programados por email (SMTP) y webhooks.`;
           {activeTab === 'audit' && <AuditPanel />}
 
           {activeTab === 'legal' && <LegalPanel />}
+          {activeTab === 'historial' && <ScanHistoryPanel />}
+          {activeTab === 'waf' && <WAFPanel />}
         </div>
       </main>
 
