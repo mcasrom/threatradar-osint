@@ -1101,70 +1101,104 @@ app.post('/api/osint/analyze', authMiddleware, async (req: any, res) => {
   }
 
   // Construir resumen de fuentes disponibles para el prompt
-  const sourceSummary = [
-    osintData.shodan && !osintData.shodan.error
-      ? `SHODAN: ${osintData.shodan.ports?.length || 0} puertos, org="${osintData.shodan.org}", vulns=${Object.keys(osintData.shodan.vulns || {}).join(', ') || 'ninguna'}`
-      : 'SHODAN: no disponible',
-    osintData.abuseipdb?.data
-      ? `ABUSEIPDB: score=${osintData.abuseipdb.data.abuseConfidenceScore}%, reports=${osintData.abuseipdb.data.totalReports}, isTor=${osintData.abuseipdb.data.isTor}`
-      : 'ABUSEIPDB: no disponible',
-    osintData.greynoise && !osintData.greynoise.error
-      ? `GREYNOISE: noise=${osintData.greynoise.noise}, riot=${osintData.greynoise.riot}, classification=${osintData.greynoise.classification || 'unknown'}`
-      : 'GREYNOISE: no disponible',
-    osintData.virustotal?.data?.attributes
-      ? `VIRUSTOTAL: reputation=${osintData.virustotal.data.attributes.reputation}, malicious=${osintData.virustotal.data.attributes.last_analysis_stats?.malicious || 0}`
-      : 'VIRUSTOTAL: no disponible',
-    osintData.ipinfo
-      ? `IPINFO: org="${osintData.ipinfo.org}", country=${osintData.ipinfo.country}, city=${osintData.ipinfo.city}`
-      : 'IPINFO: no disponible',
-  ].join('\n');
+  // Datos estructurados para el prompt — selectivos para no truncar lo importante
+  const shodanData   = osintData.shodan && !osintData.shodan.error ? osintData.shodan : null;
+  const abuseData    = osintData.abuseipdb?.data || null;
+  const gnData       = osintData.greynoise && !osintData.greynoise.message ? osintData.greynoise : null;
+  const vtData       = osintData.virustotal?.data?.attributes || null;
+  const ipinfoData   = osintData.ipinfo || null;
+  const otxData      = osintData.otx || null;
+  const tfData       = osintData.threatfox || null;
+  const crtData      = osintData.crtsh || null;
 
-  const prompt = `Eres un analista de inteligencia de amenazas (CTI) de nivel senior. Analiza la IP ${osintData.ip} con los datos OSINT proporcionados y genera un informe técnico en español.
+  const structuredData = {
+    ip: osintData.ip,
+    threat_score: { score: threatScore.score, level: threatScore.level, factors: threatScore.factors, conclusion: threatScore.conclusion },
+    network: {
+      org: shodanData?.org || ipinfoData?.org || 'N/A',
+      asn: ipinfoData?.org?.split(' ')[0] || 'N/A',
+      country: ipinfoData?.country || shodanData?.country_code || 'N/A',
+      city: ipinfoData?.city || 'N/A',
+      isp: ipinfoData?.org || 'N/A',
+      hostnames: shodanData?.hostnames || [],
+    },
+    ports: shodanData?.ports || [],
+    vulns: Object.keys(shodanData?.vulns || {}),
+    banners: shodanData?.tags || [],
+    is_tor: abuseData?.isTor || false,
+    is_vpn: shodanData?.tags?.includes('vpn') || false,
+    reputation: {
+      abuseipdb_score: abuseData?.abuseConfidenceScore ?? 'N/A',
+      abuseipdb_reports: abuseData?.totalReports ?? 0,
+      abuseipdb_categories: abuseData?.reports?.slice(0,5).map((r:any) => r.categories).flat().slice(0,10) || [],
+      virustotal_malicious: vtData?.last_analysis_stats?.malicious ?? 0,
+      virustotal_reputation: vtData?.reputation ?? 'N/A',
+      greynoise_classification: gnData?.classification || 'unknown',
+      greynoise_name: gnData?.name || '',
+      greynoise_noise: gnData?.noise || false,
+      greynoise_riot: gnData?.riot || false,
+    },
+    threat_intel: {
+      otx_pulse_count: otxData?.pulse_count ?? 0,
+      otx_reputation: otxData?.reputation ?? 0,
+      threatfox_status: tfData?.status || 'N/A',
+      threatfox_iocs: Array.isArray(tfData?.iocs) ? tfData.iocs.slice(0,5).map((i:any) => ({ malware: i.malware_printable, type: i.ioc_type, confidence: i.confidence_level, tags: i.tags })) : [],
+      crtsh_domains: crtData?.domains || [],
+    }
+  };
 
-RIESGO CALCULADO: ${threatScore.level} (${threatScore.score}/100)
-FACTORES DETECTADOS: ${threatScore.factors.join(' | ')}
+  const prompt = `Eres un analista CTI senior. Analiza la IP ${osintData.ip} y genera un informe técnico en español con los datos OSINT reales proporcionados. NO uses frases genéricas. Cada afirmación debe basarse en los datos.
 
-FUENTES OSINT DISPONIBLES:
-${sourceSummary}
+=== DATOS OSINT VERIFICADOS ===
+${JSON.stringify(structuredData, null, 2)}
 
-DATOS COMPLETOS:
-${JSON.stringify(osintData, null, 2).slice(0, 6000)}
+=== INSTRUCCIONES DE FORMATO ===
+Genera EXACTAMENTE 6 secciones markdown. Se directo, tecnico y accionable.
 
-Genera el informe con EXACTAMENTE estas 5 secciones en markdown:
+## 0. EXECUTIVE SUMMARY
+2-3 frases maximo. Nivel de riesgo, naturaleza de la amenaza, accion recomendada inmediata. Para un CISO que tiene 10 segundos.
 
-## 1. BOTNET FINGERPRINT
-Analiza si esta IP pertenece a infraestructura de botnet o C2. Busca patrones Mirai (telnet/SSH brute, puertos 23/2323), Emotet (HTTPS no estándar, puertos 8080/8443/449), Cobalt Strike (beacon en 443/80 con jitter), u otras familias. Indica ASN, rangos de red conocidos por hosting de C2, y si los puertos abiertos coinciden con perfiles de malware conocidos. Si no hay datos suficientes, indica qué herramienta adicional se necesitaría.
+## 1. BOTNET / C2 FINGERPRINT
+Usa los puertos [${structuredData.ports.join(',')}], tags [${structuredData.banners.join(',')}], is_tor=${structuredData.is_tor}, OTX pulses=${structuredData.threat_intel.otx_pulse_count}, ThreatFox IOCs=${structuredData.threat_intel.threatfox_iocs.length} para determinar:
+- Pertenece a infraestructura C2 conocida? (Mirai: 23/2323, Cobalt Strike: 443/80 con beacon, Emotet: 8080/8443)
+- Familia de malware probable o descartada con justificacion
+- Si es nodo Tor: implicaciones especificas para correlacion de ataques
 
 ## 2. THREAT ACTOR ATTRIBUTION
-Cruza ASN, organización, país, rangos IP y comportamiento con grupos APT conocidos. Considera:
-- APT28/Fancy Bear (RU): spearphishing, ports 443/80, ASNs rusos
-- Lazarus Group (KP): cryptomining, puertos no estándar, hosting anónimo
-- APT41 (CN): supply chain, puertos altos efímeros
-- Grupos iranís APT33/34: infraestructura VPS barata
-Si no hay atribución clara, indica "No atribuible con datos actuales" y explica por qué.
+ASN: ${structuredData.network.asn} | Org: ${structuredData.network.org} | Pais: ${structuredData.network.country}
+OTX pulses: ${structuredData.threat_intel.otx_pulse_count} | GreyNoise: ${structuredData.reputation.greynoise_classification} (${structuredData.reputation.greynoise_name})
+- Cruza con APTs conocidos por pais/infraestructura
+- Si es nodo Tor/VPN: explica por que la atribucion directa es imposible y que tecnicas permitirian atribucion indirecta
+- Conclusion: atribuible o no, con razonamiento
 
 ## 3. INDICADORES DE COMPROMISO (IOCs)
-Lista estructurada de IOCs encontrados:
-- IPs y rangos relacionados
-- Puertos y protocolos sospechosos
-- CVEs activos si Shodan reporta vulnerabilidades
-- Hashes o firmas si VirusTotal los reporta
-- Patrones de comportamiento (frecuencia de escaneo, categorías de abuso)
+Basado en datos reales:
+- IP y CIDR: ${osintData.ip}/32
+- Puertos confirmados: ${structuredData.ports.join(', ')}
+- CVEs activos: ${structuredData.vulns.join(', ') || 'ninguno detectado'}
+- ThreatFox IOCs: ${JSON.stringify(structuredData.threat_intel.threatfox_iocs)}
+- OTX pulse count: ${structuredData.threat_intel.otx_pulse_count} campanas documentadas
+- Dominios asociados (crt.sh): ${structuredData.threat_intel.crtsh_domains.slice(0,5).join(', ') || 'ninguno'}
+- Categorias de abuso: ${structuredData.reputation.abuseipdb_categories.join(', ') || 'N/A'}
 
-## 4. NMAP INFERENCE (sin ejecución activa)
-Basándote en los puertos Shodan y banners disponibles, infiere el perfil de servicios:
-- Sistema operativo probable (TTL, banners, stack TCP)
-- Servicios corriendo (versiones si hay banner grabbing en Shodan)
-- Vectores de ataque probables desde los servicios expuestos
-- Indica claramente que es inferencia pasiva, no escaneo activo
+## 4. PERFIL DE SERVICIOS (inferencia pasiva)
+Puertos detectados: ${structuredData.ports.join(', ')}
+Tags Shodan: ${structuredData.banners.join(', ') || 'ninguno'}
+- SO probable y stack de red
+- Servicios activos y versiones si hay banner
+- Vectores de ataque desde servicios expuestos
 
-## 5. ACCIONES DE MITIGACIÓN
-Proporciona comandos CONCRETOS y ejecutables, no genéricos:
-- Regla iptables específica para esta IP
-- Comando fail2ban para ban inmediato
-- Query SIEM (Splunk o ELK) para correlacionar esta IP en logs históricos
-- Si hay CVEs: enlace directo NVD y comando de verificación
-- Recomendación de threat hunting: qué más buscar en la red interna`;
+## 5. MITIGACION — COMANDOS EJECUTABLES
+IP objetivo: ${osintData.ip}
+Bloqueo inmediato:
+  iptables -I INPUT -s ${osintData.ip} -j DROP
+  iptables -I OUTPUT -d ${osintData.ip} -j DROP
+  fail2ban-client set sshd banip ${osintData.ip}
+Verificar conexiones activas:
+  ss -tnp | grep ${osintData.ip}
+Query ELK: GET /logs-*/_search { "query": { "bool": { "should": [{"term":{"source.ip":"${osintData.ip}"}},{"term":{"destination.ip":"${osintData.ip}"}}] } } }
+Threat hunting: que mas buscar en red interna basado en los IOCs anteriores.`;
+
 
   // Intentar Gemini primero, fallback a Groq
   if (ai) {
@@ -1193,7 +1227,7 @@ Proporciona comandos CONCRETOS y ejecutables, no genéricos:
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 3000,
+        max_tokens: 4000,
         temperature: 0.2
       });
       const text = completion.choices?.[0]?.message?.content || '';
