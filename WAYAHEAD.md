@@ -227,3 +227,28 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - Telegram alerts: @Threatradar_osint_bot → canal @ThreatRadar_Osint (-1004403719037)
 - Resend proxy: https://www.viajeinteligencia.com/api/send-alert
 - CF_ZONE_ID en ~/.cf_env
+
+## ✅ Sprint 21 — LegalPanel ToS + tab Legal (2026-06-27)
+
+### Completado
+- [x] LegalPanel.tsx — 5 secciones en acordeón:
+  - Términos de Servicio (6 cláusulas)
+  - Límites Hetzner (nmap restringido, masscan deshabilitado, volumen por plan)
+  - Privacidad y datos (RGPD, retención por plan, derechos usuario)
+  - Metodología OSINT (9 fuentes, cálculo ThreatScore, Why Engine)
+  - Conductas prohibidas y consecuencias (Art. 197 bis CP)
+- [x] Tab "Legal" con icono Scale añadido en App.tsx
+- [x] Import Scale de lucide-react añadido
+- [x] IPTesterAndManual restaurado al original funcional (detección IP pública OK)
+- [x] Commit 67303f4 — GitHub actualizado
+
+### Pendiente Sprint 22
+- [ ] Tabla comparativa vs competidores dinámica en AuditPanel (diseño listo)
+- [ ] pm2 save — persistir id 8 tras reinicios
+- [ ] CSP fix — añadir static.cloudflareinsights.com a script-src en server.ts
+- [ ] Historial scan_history — retención Free 7d / Pro 90d / Ent 365d
+- [ ] Panel historial con evolución scores por IP
+- [ ] apt install subfinder httpx nuclei amass en Hetzner
+- [ ] pip install theHarvester en Hetzner
+- [ ] README update Sprint 15-21
+- [ ] UI narrative update — textos reales en StaticInfo.tsx
