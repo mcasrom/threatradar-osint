@@ -1247,6 +1247,7 @@ app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: an
     fetch(`https://crt.sh/?q=${ip}&output=json`, { signal: AbortSignal.timeout(5000) })
       .then(r => r.json()).then(d => { results.crtsh = { count: d.length, domains: [...new Set(d.map((c: any) => c.name_value))].slice(0, 10) }; }).catch(() => {}),
   ]);
+  saveScanHistory(req.user?.id, req.user?.plan || "free", ip, results, null);
   res.json(results);
 });
 

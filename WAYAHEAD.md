@@ -285,3 +285,14 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [x] ~/.cache/Cypress eliminado — 679MB liberados  
 - [x] ~/.cache/pip eliminado — 146MB liberados
 - [x] Disco: 77% → 63% (14GB libres)
+
+## 🔄 Sprint 24 — En progreso (2026-06-27)
+- [x] scan_history tabla SQLite con auto-creación
+- [x] GET /api/history — retención Free 7d / Pro 90d / Ent 365d
+- [x] DELETE /api/history/:id
+- [x] ScanHistoryPanel.tsx — lista con score, nivel, país, ISP, resumen, fecha
+- [x] Tab Historial en App.tsx
+- [x] Sprint 22 — StaticInfo.tsx narrativa real (FAQs acordeón, normativa IPs, IPv6, fuentes reales)
+- [x] Sprint 23 — httpx v2.14.0, subfinder, wafw00f instalados en Hetzner
+- [x] Disco Hetzner: 77% → 63% (limpieza go-build/Cypress/pip cache)
+- [ ] PENDIENTE: conectar saveScanHistory() al endpoint /api/osint/ip-full
