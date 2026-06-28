@@ -479,3 +479,20 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] README update Sprints 15–27
 - [ ] Paywall suave en AI Panel (blur + CTA para usuarios anónimos)
 - [ ] Lead magnet: email gate antes de descarga del manual
+
+## Sprint 27c — Manual PDF v2.0 + Fix título IA ✅ [2026-06-28]
+### Completado
+- [x] Manual PDF v2.0 generado con WeasyPrint (dark theme #0d1117, 9 secciones, 90KB)
+- [x] Secciones: portada, índice, arquitectura, mapa, OSINT, Risk Score, IA dual, módulos, Telegram, planes, apéndice
+- [x] PDF en dist/manual-threatradar-v2.pdf → accesible en /manual-threatradar-v2.pdf
+- [x] Botón "Manual v2.0" → descarga PDF real (reemplaza .txt antiguo)
+- [x] WeasyPrint instalado en Hetzner (/home/deploy/.local/bin/weasyprint)
+### Pendiente Sprint 27d
+- [ ] Fix título "INFORME DE INTELIGENCIA IA — GEMINI" → dinámico según motor activo
+- [ ] Revisión CLI de módulos OSINT (diagnóstico de fallos, permisos, herramientas)
+- [ ] D3.js/TopoJSON map redesign — SimplifiedVectorMap.tsx
+- [ ] Competitor comparison table — AuditPanel
+- [ ] Real theHarvester domain test
+- [ ] README update Sprints 15–27
+- [ ] Paywall suave en AI Panel
+- [ ] Lead magnet email gate para descarga manual
