@@ -93,9 +93,10 @@ const plans = [
 
 interface PricingPageProps {
   onNavigateToAuth?: () => void;
+  onContactEnterprise?: () => void;
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ onNavigateToAuth }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ onNavigateToAuth, onContactEnterprise }) => {
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
@@ -163,7 +164,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ onNavigateToAuth }) =>
 
               {/* CTA */}
               <button
-                onClick={onNavigateToAuth}
+                onClick={plan.id === 'enterprise' ? onContactEnterprise : onNavigateToAuth}
                 className={`w-full py-2 rounded text-xs font-mono transition ${plan.ctaStyle}`}
               >
                 {plan.cta}

@@ -401,7 +401,7 @@ export default function App() {
           {activeTab === 'dispatch' && <AutoReportsManager />}
 
 
-          {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('dashboard')} />}
+          {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => { setActiveTab('dashboard'); setTimeout(() => { const el = document.getElementById('auth-panel'); if(el) el.scrollIntoView({behavior:'smooth'}); }, 100); }} onContactEnterprise={() => window.open('mailto:mcasrom@gmail.com?subject=ThreatRadar Enterprise&body=Hola, me interesa el plan Enterprise.', '_blank')} />}
           {activeTab === 'dashboard' && <UserDashboard onNavigateToPricing={() => setActiveTab('pricing')} />}
 
 
