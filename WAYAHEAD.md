@@ -435,3 +435,16 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] theHarvester test real con dominio de prueba
 - [ ] README update Sprint 15-27
 - [ ] Revisar resto de tabs — ¿Dispatch tiene sentido?
+
+## ✅ Sprint 27f — Limpieza UI (2026-06-28)
+- [x] AlertSimulator eliminado — datos ficticios fuera
+- [x] Import AlertSimulator eliminado de App.tsx
+- [x] Bloque <details> simulador visual eliminado
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Tabla comparativa competidores dinámica en AuditPanel (SQLite + review mensual Telegram)
+- [ ] theHarvester test real con dominio de prueba
+- [ ] README update Sprint 15-27
+- [ ] Revisar tab Dispatch (AutoReportsManager) — ¿tiene sentido como tab o integrar en monitor?
+- [ ] Revisar tab Docs — contenido actualizado o eliminar
+- [ ] nuclei/amass — confirmar unavailable en UI módulos
