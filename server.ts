@@ -117,7 +117,7 @@ import { execSync } from 'child_process';
 
 function checkToolAvailable(tool: string): boolean {
   try {
-    const { stdout } = execSync(`which ${tool}`, { encoding: 'utf-8' });
+    const { stdout } = execSync(`which ${tool}`, { encoding: 'utf-8', env: { ...process.env, PATH: `/home/deploy/.local/bin:/home/deploy/go/bin:${process.env.PATH}` } });
     return stdout.trim().length > 0;
   } catch {
     return false;
@@ -479,9 +479,11 @@ app.post('/api/modules/run', async (req, res) => {
       return res.status(400).json({ error: 'Command contains invalid characters' });
     }
 
+    const toolEnv = { ...process.env, PATH: `/home/deploy/.local/bin:/home/deploy/go/bin:${process.env.PATH}` };
     const { stdout, stderr } = await execAsync(command, { 
       timeout: 120000,
-      maxBuffer: 20 * 1024 * 1024 
+      maxBuffer: 20 * 1024 * 1024,
+      env: toolEnv
     });
 
     res.json({ 
@@ -586,21 +588,52 @@ Generated: ${new Date().toISOString()}
 Active Modules: ${modules.length}
 Previous Reports: ${existingReports.length}`;
 
+  // Datos reales SQLite
+  let realStats = '';
+  try {
+    const Database2 = require('better-sqlite3');
+    const db2 = new Database2(require('path').join(process.cwd(), 'data/threatradar.db'));
+    const c2count = db2.prepare('SELECT COUNT(*) as n FROM threat_map').get();
+    const urlcount = db2.prepare('SELECT COUNT(*) as n FROM urlhaus_feed').get();
+    const topAsn = db2.prepare('SELECT org, COUNT(*) as n FROM threat_map GROUP BY org ORDER BY n DESC LIMIT 5').all();
+    const topCountry = db2.prepare('SELECT country, COUNT(*) as n FROM threat_map GROUP BY country ORDER BY n DESC LIMIT 5').all();
+    const recentScans = db2.prepare('SELECT ip, threat_score, threat_level, country, isp, created_at FROM scan_history ORDER BY created_at DESC LIMIT 5').all();
+    db2.close();
+    realStats = `DATOS EN VIVO THREATRADAR:\n- C2s rastreados: ${c2count?.n || 0}\n- URLs malware URLHaus: ${urlcount?.n || 0}\n- Top ASNs: ${JSON.stringify(topAsn)}\n- Top países: ${JSON.stringify(topCountry)}\n- Últimos scans: ${JSON.stringify(recentScans)}`;
+  } catch(e: any) {
+    realStats = 'SQLite no disponible';
+    console.error('[REPORT-SQLITE-ERROR]', e.message, e.stack);
+  }
+
+  const reportPrompt = `Eres analista CTI senior de ThreatRadar OSINT. Fecha actual: ${new Date().toUTCString()}.
+Genera informe ${period} en español basado EXCLUSIVAMENTE en estos datos reales:
+
+${realStats}
+
+Formato markdown:
+# ThreatRadar SOC Report — ${period.toUpperCase()} — ${new Date().toLocaleDateString('es-ES')}
+## 1. Resumen Ejecutivo
+## 2. Indicadores Clave
+## 3. Top Amenazas por ASN y País
+## 4. IPs recientes analizadas
+## 5. Recomendaciones accionables
+
+Usa los números reales. No inventes datos. No uses fechas anteriores a hoy.`;
+
   if (ai) {
     try {
-      const gRes = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: `Generate a ${period} security summary report. Active modules: ${modules.length}. Focus on OSINT findings and mitigation. Markdown format.`,
-      });
+      const gRes = await ai.models.generateContent({ model: 'gemini-2.0-flash', contents: reportPrompt });
       if (gRes.text) analysisText = gRes.text;
     } catch {
-      // Fallback Groq
       if (groq) {
         try {
           const gqRes = await groq.chat.completions.create({
-            model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'user', content: `Generate a ${period} cybersecurity OSINT summary report. Active modules: ${modules.length}. Focus on threat intelligence findings and mitigation recommendations. Markdown format.` }],
-            max_tokens: 800
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: 'Analista CTI senior. Usa SOLO los datos reales proporcionados. Nunca inventes datos ni fechas.' },
+              { role: 'user', content: reportPrompt }
+            ],
+            max_tokens: 1200
           });
           analysisText = gqRes.choices[0]?.message?.content || analysisText;
         } catch {}
@@ -1130,7 +1163,7 @@ app.post('/api/osint/analyze', authMiddleware, async (req: any, res) => {
     reputation: {
       abuseipdb_score: abuseData?.abuseConfidenceScore ?? 'N/A',
       abuseipdb_reports: abuseData?.totalReports ?? 0,
-      abuseipdb_categories: abuseData?.reports?.slice(0,5).map((r:any) => r.categories).flat().slice(0,10) || [],
+      abuseipdb_categories: Array.isArray(abuseData?.reports) ? abuseData.reports.slice(0,5).map((r:any) => r.categories).flat().slice(0,10) : [],
       virustotal_malicious: vtData?.last_analysis_stats?.malicious ?? 0,
       virustotal_reputation: vtData?.reputation ?? 'N/A',
       greynoise_classification: gnData?.classification || 'unknown',

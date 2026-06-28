@@ -182,7 +182,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'Masscan Port Sweep',
         description: 'Escaneo ultra-rápido de puertos TCP en rangos de IP completos.',
         version: '1.3.2',
-        status: 'active',
+        status: 'unavailable',
         commandTemplate: 'masscan -p1-65535 {target} --rate 10000',
         outputFormat: 'text',
         category: 'network'
