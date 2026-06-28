@@ -73,7 +73,7 @@ if (!fs.existsSync(DB_FILE)) {
         description: 'Recolección de emails, subdominios, IPs y hosts desde motores de búsqueda.',
         version: '4.6.0',
         status: 'active',
-        commandTemplate: 'theHarvester -d {target} -b google,bing,duckduckgo -l 500',
+        commandTemplate: 'theHarvester -d {target} -b duckduckgo,dnsdumpster,crtsh -l 200',
         outputFormat: 'text',
         category: 'osint'
       },

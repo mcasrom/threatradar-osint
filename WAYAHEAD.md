@@ -367,3 +367,21 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] Tabla comparativa competidores dinámica en AuditPanel (SQLite + review mensual)
 - [ ] theHarvester — test real con dominio de prueba en servidor
 - [ ] README update Sprint 15-26
+
+## ✅ Sprint 27a — Fixes críticos (2026-06-28)
+- [x] execAsync PATH fix — ~/.local/bin y ~/go/bin en env de ejecución de módulos
+- [x] checkToolAvailable PATH fix — rutas absolutas sin tilde
+- [x] Auto-generate informe con datos SQLite reales (C2s, URLHaus, ASNs, países, scans)
+- [x] Bug fecha 2024 → 2026 corregido
+- [x] Bug `no such column: score` → `threat_score` corregido
+- [x] Bug `abuseipdb_categories` Array.isArray corregido
+- [x] Bug ruta SQLite relativa → path.join(process.cwd()) corregido
+- [x] shodan marcado unavailable (sin API key)
+- [x] theHarvester activo (~/.local/bin/theHarvester)
+- [x] wafw00f funcional en producción
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Mapa D3.js rediseño completo SimplifiedVectorMap.tsx (TopoJSON, lat/lng reales, animaciones)
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] theHarvester test real con dominio de prueba
+- [ ] README update Sprint 15-27
