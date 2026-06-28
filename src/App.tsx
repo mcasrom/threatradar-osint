@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { SimplifiedVectorMap } from './components/SimplifiedVectorMap';
-import { AlertSimulator } from './components/AlertSimulator';
 import { IPTesterAndManual } from './components/IPTesterAndManual';
 import { OSINTModulesManager } from './components/OSINTModulesManager';
 import { PremiumAIChat } from './components/PremiumAIChat';
@@ -328,20 +327,6 @@ Reportes programados por email (SMTP) y webhooks.`;
                   onHoverAlert={setHoveredAlert}
                 />
                 
-                {/* Demo Visual — colapsado por defecto */}
-                <details className="bg-brand-panel border border-brand-border rounded-lg overflow-hidden">
-                  <summary className="flex items-center gap-2 px-4 py-3 cursor-pointer hover:bg-brand-bg/40 transition list-none">
-                    <span className="text-[10px] bg-zinc-800 text-zinc-400 border border-zinc-700 rounded px-2 py-0.5 font-mono">DEMO</span>
-                    <span className="text-[12px] font-sans font-medium text-zinc-400">Simulador visual de ataques</span>
-                    <span className="text-[10px] text-zinc-600 font-mono ml-auto">Simulación ficticia — no analiza IPs reales</span>
-                  </summary>
-                  <div className="border-t border-brand-border/40 p-4">
-                    <div className="text-[10px] font-mono text-zinc-500 mb-3 bg-zinc-900/60 border border-zinc-800 rounded px-3 py-2">
-                      ⚠️ Esta herramienta genera ataques <strong className="text-zinc-300">ficticios</strong> para visualizar cómo reacciona el mapa en tiempo real. Los datos son simulados y no representan amenazas reales. Útil para demos y presentaciones.
-                    </div>
-                    <AlertSimulator onTriggerAlert={handleTriggerAlert} />
-                  </div>
-                </details>
 
                 <IPTesterAndManual onTriggerAlert={handleTriggerAlert} />
               </div>

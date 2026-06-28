@@ -422,3 +422,16 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] README update Sprint 15-27
 - [ ] Revisar otros textos mock/placeholder en UI
 - [ ] Manual de Operación SOC Handbook — revisar si eliminar o actualizar
+
+## ✅ Sprint 27e — UI navegación limpia (2026-06-28)
+- [x] Tab "Monetización Stripe" eliminado de cabecera
+- [x] MonetizationPanel integrado en UserDashboard
+- [x] WAFPanel integrado en IPTester tras análisis OSINT
+- [x] Tab WAF eliminado de cabecera
+- [x] PricingPage redirige a dashboard en lugar de billing
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] theHarvester test real con dominio de prueba
+- [ ] README update Sprint 15-27
+- [ ] Revisar resto de tabs — ¿Dispatch tiene sentido?
