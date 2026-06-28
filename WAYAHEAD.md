@@ -462,3 +462,20 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] README update Sprint 15-27
 - [ ] Revisar tab Dispatch y Docs — limpiar o actualizar
 - [ ] Consistencia general UI — revisar textos mock restantes
+
+## Sprint 27b — Home Layout Redesign + CTA Funnel ✅ [2026-06-28]
+### Completado
+- [x] Fix build: IPTesterAndManual.tsx — unterminated regex (ternarios JSX → bloques, regex → split/join, divs desbalanceados)
+- [x] Home layout Opción B: mapa full width, feed en grid 2col lg, IPTester bajo el fold
+- [x] CTA banner superior: pill LIVE animado + botón "Manual v2.0" + "Registrarse gratis →"
+- [x] Feed restructurado: grid 2 columnas sm, max-h-64 scroll, sin corte lateral
+- [x] Panel derecho: stats de sesión (amenazas, alertas, fuentes OSINT, motor IA) + CTA Enterprise
+- [x] Botón upgrade "Ver planes →" → navega a pricing tab
+### Pendiente Sprint 27c
+- [ ] Manual PDF v2.0 (WeasyPrint, dark theme, secciones completas del ecosistema)
+- [ ] D3.js/TopoJSON map redesign — SimplifiedVectorMap.tsx
+- [ ] Competitor comparison table — AuditPanel
+- [ ] Real theHarvester domain test
+- [ ] README update Sprints 15–27
+- [ ] Paywall suave en AI Panel (blur + CTA para usuarios anónimos)
+- [ ] Lead magnet: email gate antes de descarga del manual
