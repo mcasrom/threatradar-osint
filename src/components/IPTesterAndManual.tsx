@@ -412,64 +412,6 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
         )}
       </div>
 
-      {/* Manual de Operación y Manual del Usuario Visible */}
-      <div className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 shadow-2xl relative flex flex-col justify-between">
-        <div className="space-y-2">
-          <div className="flex justify-between items-center pb-2 border-b border-brand-border/60">
-            <h4 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">
-              <BookOpen size={16} />
-              📖 MANUAL DE OPERACIÓN Y PRUEBAS TÁCTICAS
-            </h4>
-            <span className="text-[8px] border border-brand-border px-1.5 py-0.5 rounded text-zinc-500 font-mono">SOC HANDBOOK</span>
-          </div>
-
-          <p className="text-zinc-400 text-xs font-sans leading-relaxed">
-            Siga esta guía rápida paso a paso para testear toda la suite cibernética y ver los flujos de red integrados en tiempo real:
-          </p>
-
-          <div className="space-y-2 pt-2.5 text-xs text-zinc-300 font-sans">
-            <div className="flex items-start gap-2.5">
-              <span className="bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/35 text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono mt-0.5 shrink-0">1</span>
-              <div>
-                <strong className="text-white block font-semibold">Testear Visualización de Mapa</strong>
-                <span className="text-[11px] text-zinc-400 block leading-tight">Use la tarjeta izquierda ("Inyectar Mi IP") para registrar su IP o cualquier nodo público. Verá un láser trazarse directo al SOC Central europeo.</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/35 text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono mt-0.5 shrink-0">2</span>
-              <div>
-                <strong className="text-white block font-semibold">Simular Amenazas en Tiempo Real</strong>
-                <span className="text-[11px] text-zinc-400 block leading-tight">En la sección debajo del mapa, haga clic en "Secuencias Completa SOC" o lance payloads específicos para simular ataques tipo DDoS, Log4j o SQLi.</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/35 text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono mt-0.5 shrink-0">3</span>
-              <div>
-                <strong className="text-white block font-semibold">Auditar con los Módulos OSINT Activos</strong>
-                <span className="text-[11px] text-zinc-400 block leading-tight">Vaya a la pestaña "Plugins /modules/osint", introduzca su IP objetivos en la consola interactiva tipo terminal Bash, y ejecute un escaneo Nmap simulado.</span>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-2.5">
-              <span className="bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/35 text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono mt-0.5 shrink-0">4</span>
-              <div>
-                <strong className="text-white block font-semibold">Generar Reporte IA Premium</strong>
-                <span className="text-[11px] text-zinc-400 block leading-tight">Introduzca su organización y su perfil de infraestructura en la pestaña "Motor Premium IA" para que Gemini formule remediaciones y queries específicas de Shodan.</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-brand-border/40 text-[9px] font-mono text-zinc-500 flex justify-between items-center">
-          <span>Estándar: RFC 1918 & OSINT Framework v3.1</span>
-          <span className="text-brand-cyan animate-pulse">● CONECTADO AL SOC CENTRAL</span>
-        </div>
-      </div>
-
-      </div>
-
       {/* OSINT Full Analysis Card */}
       <div className="mt-5 bg-brand-panel border border-brand-cyan/30 p-5 rounded-lg shadow-2xl space-y-4">
         <div className="flex justify-between items-center pb-2 border-b border-brand-border/60">

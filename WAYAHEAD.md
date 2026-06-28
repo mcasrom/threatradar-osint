@@ -448,3 +448,17 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] Revisar tab Dispatch (AutoReportsManager) — ¿tiene sentido como tab o integrar en monitor?
 - [ ] Revisar tab Docs — contenido actualizado o eliminar
 - [ ] nuclei/amass — confirmar unavailable en UI módulos
+
+## ✅ Sprint 27g — PricingPage real (2026-06-28)
+- [x] Precios reales: Free €0 / Pro €4,99mes o €19,99año / Enterprise €19,99año
+- [x] Features reales por plan — sin Shodan, sin AlertSimulator, sin Hunter.io
+- [x] Fuentes OSINT reales listadas (AbuseIPDB, OTX, ThreatFox, GreyNoise, VirusTotal, crt.sh, InternetDB, URLHaus)
+- [x] Pro muestra ahorro 60% con plan anual
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Stripe — actualizar price_ids con nuevos precios 4.99/19.99
+- [ ] Tabla comparativa competidores en AuditPanel
+- [ ] theHarvester test real
+- [ ] README update Sprint 15-27
+- [ ] Revisar tab Dispatch y Docs — limpiar o actualizar
+- [ ] Consistencia general UI — revisar textos mock restantes
