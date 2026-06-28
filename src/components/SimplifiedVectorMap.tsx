@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ThreatAlert } from '../types';
-import { Maximize2, Minimize2, MapPin, Eye, Compass, ShieldAlert, FileText, Download, Activity } from 'lucide-react';
+import { Maximize2, Globe, Activity, Zap } from 'lucide-react';
+import * as topojson from 'topojson-client';
 
 interface GeoMapProps {
   alerts: ThreatAlert[];
@@ -8,495 +9,333 @@ interface GeoMapProps {
   onHoverAlert: (alert: ThreatAlert | null) => void;
 }
 
-export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAlert, onHoverAlert }) => {
-  const [selectedRegion, setSelectedRegion] = useState<string>('GLOBAL');
-  const [asnData, setAsnData] = useState<any[]>([]);
-  const openMapWindow = () => window.open('/?mode=map', '_blank', 'width=1200,height=800,scrollbars=yes');
-  const [showAsn, setShowAsn] = useState<boolean>(false);
+interface AsnEntry {
+  org: string;
+  count: number;
+}
 
+const W = 960;
+const H = 480;
+
+const THREAT_COLORS: Record<string, string> = {
+  CRITICAL: '#ff2d55',
+  HIGH:     '#ff6b35',
+  MEDIUM:   '#ffd60a',
+  LOW:      '#30d158',
+  INFO:     '#64d2ff',
+};
+
+// Equirectangular projection [lng, lat] → [x, y] in viewBox coords
+const project = (lng: number, lat: number): [number, number] => {
+  const x = ((lng + 180) / 360) * W;
+  const y = ((90 - lat) / 180) * H;
+  return [
+    Math.max(0, Math.min(W, x)),
+    Math.max(0, Math.min(H, y)),
+  ];
+};
+
+// GeoJSON geometry → SVG path string (equirectangular)
+const geoToPath = (geometry: any): string => {
+  if (!geometry) return '';
+  const ringToD = (ring: number[][]): string => {
+    if (!ring || ring.length < 3) return '';
+    const valid = ring.filter(([lng, lat]) =>
+      lng >= -180 && lng <= 180 && lat >= -85 && lat <= 85
+    );
+    if (valid.length < 3) return '';
+    let d = '';
+    let prev: number | null = null;
+    for (let i = 0; i < valid.length; i++) {
+      const [lng, lat] = valid[i];
+      const [x, y] = project(lng, lat);
+      // Detectar cruce de antimeridiano: salto > 300px en X
+      if (prev !== null && Math.abs(x - prev) > 300) {
+        d += ` M${x.toFixed(1)},${y.toFixed(1)}`;
+      } else {
+        d += i === 0 ? `M${x.toFixed(1)},${y.toFixed(1)}` : ` L${x.toFixed(1)},${y.toFixed(1)}`;
+      }
+      prev = x;
+    }
+    return d + ' Z';
+  };
+
+  if (geometry.type === 'Polygon') {
+    return geometry.coordinates.map(ringToD).join(' ');
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return geometry.coordinates
+      .map((poly: number[][][]) => poly.map(ringToD).join(' '))
+      .join(' ');
+  }
+  return '';
+};
+
+// ISO numeric → alpha-2
+const NUM_TO_A2: Record<string, string> = {
+  '4':'AF','8':'AL','12':'DZ','24':'AO','32':'AR','36':'AU','40':'AT','50':'BD',
+  '56':'BE','64':'BT','68':'BO','76':'BR','100':'BG','116':'KH','120':'CM',
+  '124':'CA','152':'CL','156':'CN','170':'CO','178':'CG','180':'CD','188':'CR',
+  '191':'HR','192':'CU','203':'CZ','208':'DK','218':'EC','818':'EG','222':'SV',
+  '231':'ET','246':'FI','250':'FR','276':'DE','288':'GH','300':'GR','320':'GT',
+  '332':'HT','340':'HN','344':'HK','348':'HU','356':'IN','360':'ID','364':'IR',
+  '368':'IQ','372':'IE','376':'IL','380':'IT','388':'JM','392':'JP','400':'JO',
+  '398':'KZ','404':'KE','408':'KP','410':'KR','414':'KW','422':'LB','504':'MA',
+  '484':'MX','496':'MN','508':'MZ','516':'NA','524':'NP','528':'NL','554':'NZ',
+  '558':'NI','566':'NG','578':'NO','586':'PK','591':'PA','600':'PY','604':'PE',
+  '608':'PH','616':'PL','620':'PT','630':'PR','642':'RO','643':'RU','682':'SA',
+  '686':'SN','694':'SL','706':'SO','710':'ZA','724':'ES','144':'LK','729':'SD',
+  '752':'SE','756':'CH','760':'SY','764':'TH','780':'TT','788':'TN','792':'TR',
+  '800':'UG','804':'UA','784':'AE','826':'GB','840':'US','858':'UY','860':'UZ',
+  '862':'VE','704':'VN','887':'YE','894':'ZM','716':'ZW',
+};
+
+export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ alerts, hoveredAlert, onHoverAlert }) => {
+  const [asnData, setAsnData]           = useState<AsnEntry[]>([]);
+  const [showAsn, setShowAsn]           = useState(false);
+  const [countryPaths, setCountryPaths] = useState<{ id: string; d: string }[]>([]);
+  const [mapLoaded, setMapLoaded]       = useState(false);
+  const [mapError, setMapError]         = useState('');
+  const [pulsePhase, setPulsePhase]     = useState(0);
+
+  const openMapWindow = () => window.open('/?mode=map', '_blank', 'width=1400,height=900');
+
+  // Pulse animation
+  useEffect(() => {
+    const id = setInterval(() => setPulsePhase(p => (p + 1) % 100), 60);
+    return () => clearInterval(id);
+  }, []);
+
+  // Load TopoJSON (local first, CDN fallback)
+  useEffect(() => {
+    const urls = [
+      '/assets/countries-110m.json',
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
+    ];
+    const tryLoad = (i: number) => {
+      if (i >= urls.length) { setMapError('No se pudo cargar el mapa'); return; }
+      fetch(urls[i])
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+        .then((topo: any) => {
+          const geo = topojson.feature(topo, topo.objects.countries) as any;
+          const paths = (geo.features as any[]).map((f: any) => ({
+            id: String(f.id ?? ''),
+            d: geoToPath(f.geometry),
+          })).filter(p => p.d.length > 0);
+          setCountryPaths(paths);
+          setMapLoaded(true);
+        })
+        .catch(() => tryLoad(i + 1));
+    };
+    tryLoad(0);
+  }, []);
+
+  // Load ASN data
   useEffect(() => {
     fetch('/api/threatmap/asn')
       .then(r => r.json())
       .then(d => setAsnData(d.asns || []))
       .catch(() => {});
   }, []);
-  const [viewHeatmap, setViewHeatmap] = useState<boolean>(true);
-  const [selectedAlertForInspection, setSelectedAlertForInspection] = useState<ThreatAlert | null>(null);
 
-  // Central Hub Station (Europe / Germany)
-  const targetX = 52.7;
-  const targetY = 10.8;
+  // Heatmap: count alerts per country alpha-2
+  const countryCounts = alerts.reduce((acc, a) => {
+    if (a.country) acc[a.country] = (acc[a.country] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const maxCount = Math.max(1, ...Object.values(countryCounts));
 
-  // Regional coordinates for world mapping
-  const regionCountries: Record<string, string[]> = {
-    'NORTEAMÉRICA': ['US','CA','MX'],
-    'SUDAMÉRICA': ['BR','AR','CO','CL','PE','VE','EC','BO','PY','UY'],
-    'EUROPA SOC CENTRAL': ['DE','FR','GB','IT','ES','NL','PL','RU','UA','SE','NO','FI','CH','AT','BE','CZ','RO'],
-    'ASIA PACÍFICO': ['CN','JP','KR','IN','SG','TH','VN','ID','PH','MY','TW','HK'],
-    'ÁFRICA CENTRAL': ['ZA','NG','KE','EG','ET','GH','TZ','MA','SN'],
-    'ESTACIÓN AUSTRALIA': ['AU','NZ']
+  const heatColor = (numId: string): string | null => {
+    const a2 = NUM_TO_A2[String(parseInt(numId, 10))] || '';
+    const n = countryCounts[a2] || 0;
+    if (!n) return null;
+    const t = n / maxCount;
+    if (t > 0.7) return 'rgba(255,45,85,0.55)';
+    if (t > 0.4) return 'rgba(255,107,53,0.45)';
+    if (t > 0.1) return 'rgba(255,214,10,0.30)';
+    return 'rgba(48,209,88,0.18)';
   };
 
-  const filteredAlerts = selectedRegion === 'GLOBAL'
-    ? alerts
-    : alerts.filter(a => {
-        const countries = regionCountries[selectedRegion] || [];
-        return countries.includes(a.country);
-      });
+  // Alerts with valid lat/lng
+  const alertsGeo = alerts
+    .filter((a: any) => (a.lat ?? a.latitude) != null && (a.lon ?? a.longitude) != null)
+    .map((a: any) => ({ a, pos: project(a.lon ?? a.longitude, a.lat ?? a.latitude) }));
 
-  const regionalCoordinates = [
-    { name: 'Norteamérica', x: 22.0, y: 15.2 },
-    { name: 'Sudamérica', x: 30.0, y: 32.0 },
-    { name: 'Europa SOC Central', x: 52.7, y: 10.8 },
-    { name: 'Asia Pacífico', x: 74.0, y: 19.4 },
-    { name: 'África Central', x: 52.0, y: 25.0 },
-    { name: 'Estación Australia', x: 82.0, y: 32.0 }
-  ];
-
-  // Equirectangular projection mapping
-  const projectCoordinates = (lat: number, lng: number) => {
-    const x = ((lng + 180) / 360) * 100;
-    const y = ((90 - lat) / 180) * 50;
-    return {
-      x: Math.max(2, Math.min(98, x)),
-      y: Math.max(2, Math.min(48, y))
-    };
-  };
-
+  // Stats
+  const critCount = alerts.filter(a => a.level === 'CRITICAL').length;
+  const highCount = alerts.filter(a => a.level === 'HIGH').length;
+  const countries = new Set(alerts.map(a => a.country).filter(Boolean)).size;
 
   return (
-    <div id="geographical-vector-map-panel" className="bg-brand-panel border border-brand-border p-5 rounded-lg space-y-4 shadow-xl relative overflow-hidden">
-      
-      {/* Top Header controls */}
-      <div className="absolute top-3 right-3 z-10">
-        <button
-          onClick={openMapWindow}
-          title="Abrir mapa en ventana independiente"
-          className="flex items-center gap-1 px-2 py-1 bg-zinc-800/80 hover:bg-zinc-700 border border-brand-border/60 rounded text-[10px] text-zinc-400 hover:text-brand-green transition-colors font-mono"
-        >
-          <Maximize2 size={11} />
-          VENTANA
-        </button>
-      </div>
-      <div className="flex flex-wrap justify-between items-center gap-2 pb-3 border-b border-brand-border/60 w-full">
+    <div id="geographical-vector-map-panel"
+      className="bg-brand-panel border border-brand-border p-4 rounded-lg shadow-xl relative overflow-hidden space-y-3">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">
-            <Compass size={16} className="animate-spin text-brand-cyan" style={{ animationDuration: '20s' }} /> 
-            TACTICAL MULTI-VECTOR OSINT CYBERMAP
+          <h3 className="text-sm font-bold font-mono text-brand-cyan tracking-wider flex items-center gap-2">
+            <Globe size={14} />
+            LIVE THREAT MAP
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse">
+              ● LIVE
+            </span>
           </h3>
-          <p className="text-[10px] text-zinc-400 font-sans mt-0.5">
-            Intercepción de portadoras, ruteo malicioso pasivo y vectores de asalto geopolítico.
+          <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
+            {alerts.length} amenazas · {countries} países · {alertsGeo.length} geolocalizadas
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewHeatmap(!viewHeatmap)}
-            className={`text-[10px] font-mono px-2.5 py-1 rounded transition border ${
-              viewHeatmap 
-                ? 'bg-brand-cyan/20 text-brand-cyan border-brand-cyan/40 shadow-[0_0_8px_rgba(0,242,255,0.2)]' 
-                : 'bg-[#0b121f] text-zinc-500 border-brand-border'
-            }`}
-          >
-            {viewHeatmap ? '🔥 Capa de Calor: ON' : '⚫ Capa de Calor: OFF'}
+          <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
+            CRIT {critCount}
+          </span>
+          <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20">
+            HIGH {highCount}
+          </span>
+          <button onClick={() => setShowAsn(s => !s)}
+            className={`text-[9px] font-mono px-2 py-0.5 rounded border transition ${
+              showAsn ? 'bg-brand-cyan/10 text-brand-cyan border-brand-cyan/30'
+                      : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
+            TOP ASN
           </button>
-
+          <button onClick={openMapWindow}
+            className="flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded text-[9px] text-zinc-400 hover:text-brand-cyan transition font-mono">
+            <Maximize2 size={10} /> VENTANA
+          </button>
         </div>
       </div>
 
-      {/* High Fidelity Vector SVG Map - Improved Geography */}
-      <div className="relative w-full aspect-[2/1] bg-[#070b13] border border-brand-border/80 rounded-lg overflow-hidden flex items-center justify-center">
-        
-        {/* Background Grid Lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,242,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,242,255,0.03)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-        
-        {/* Cyber radar scan overlay */}
-        <div className="absolute inset-x-0 h-[20%] bg-gradient-to-b from-transparent via-brand-cyan/10 to-transparent pointer-events-none animate-radar-scan opacity-60" />
+      {/* ── SVG Map ── */}
+      <div className="relative w-full bg-[#04080f] border border-brand-border/50 rounded overflow-hidden"
+        style={{ aspectRatio: '2/1' }}>
 
-        {/* Improved Geographically Accurate Vector Map */}
-        <svg viewBox="0 0 100 50" className="absolute inset-0 w-full h-full select-none pointer-events-none z-10 opacity-[0.35]">
-          {/* Antarctica - improved */}
-          <path 
-            d="M 2 48 L 10 47 L 20 46.5 L 30 46 L 40 45.8 L 50 45.8 L 60 46 L 70 46.5 L 80 47 L 90 47.5 L 98 48 L 98 49.5 L 2 49.5 Z"
-            fill="#121e33" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Greenland - more accurate shape */}
-          <path 
-            d="M 30 3 L 32 2 L 34 1.5 L 36 2 L 38 3 L 39 4.5 L 38 6 L 36 7 L 34 7.5 L 32 7 L 30.5 5.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Iceland */}
-          <path 
-            d="M 37 8.5 L 38.5 8 L 39.5 8.5 L 39 9.5 L 37.5 9.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* North America - significantly improved */}
-          <path 
-            d="M 3 7 L 5 5 L 8 4 L 12 3 L 16 2.5 L 20 3 L 24 4 L 27 5 L 29 6 L 31 7 L 32 8 L 31 10 L 30 12 L 28 14 L 27 16 L 26 18 L 25 19 L 24 20 L 23 21 L 22 22 L 20 21 L 19 19 L 18 17 L 17 15 L 16 13 L 15 11 L 14 10 L 13 9 L 12 8 L 10 7 L 8 7 L 6 7 L 4 7 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* Central America - improved */}
-          <path 
-            d="M 22 22 L 23 23 L 24 24 L 25 25 L 24 26 L 23 25 L 22 24 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.7"
-          />
-          
-          {/* Caribbean Islands */}
-          <path 
-            d="M 26 21 L 27 20.5 L 28 21 L 27.5 21.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          <path 
-            d="M 29 21.5 L 30 21 L 31 21.5 L 30.5 22 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* South America - significantly improved */}
-          <path 
-            d="M 25 26 L 27 25 L 29 25.5 L 31 26 L 32 27 L 33 28 L 34 30 L 34 32 L 33 34 L 32 36 L 31 38 L 30 40 L 29 42 L 28 44 L 27 45 L 26 44 L 26 42 L 25 40 L 24 38 L 24 36 L 25 34 L 25 32 L 24 30 L 24 28 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* United Kingdom & Ireland - improved */}
-          <path 
-            d="M 42 11 L 43 10 L 44 10.5 L 44.5 11.5 L 44 13 L 43 13.5 L 42.5 12.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Ireland */}
-          <path 
-            d="M 40.5 11.5 L 41.5 11 L 42 12 L 41.5 13 L 40.5 12.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Scandinavia - improved */}
-          <path 
-            d="M 47 5 L 48 4 L 49 3.5 L 50 4 L 51 5 L 51 7 L 50 8 L 49 9 L 48 8 L 47 7 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Finland */}
-          <path 
-            d="M 51 5 L 52 4.5 L 53 5 L 53 7 L 52 8 L 51 7 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Europe - significantly improved */}
-          <path 
-            d="M 42 14 L 44 13 L 46 13.5 L 48 12 L 49 11 L 50 10 L 51 10.5 L 52 11 L 52 13 L 51 14 L 50 15 L 49 16 L 48 17 L 47 17.5 L 46 17 L 45 16.5 L 44 16 L 43 15 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* Iberian Peninsula */}
-          <path 
-            d="M 40 16 L 42 15.5 L 43 16 L 43 18 L 42 19 L 41 19 L 40 18 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Italy */}
-          <path 
-            d="M 46 16 L 47 15.5 L 48 16 L 48 17 L 47.5 18 L 47 19 L 46.5 20 L 46 19 L 45.5 18 L 45.5 17 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Balkans */}
-          <path 
-            d="M 48 16 L 49 15.5 L 50 16 L 50 17 L 49 18 L 48 17.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Africa - significantly improved */}
-          <path 
-            d="M 40 20 L 43 19 L 46 19 L 49 19 L 51 19.5 L 53 20 L 54 21 L 55 23 L 56 25 L 57 27 L 57 29 L 56 31 L 55 33 L 54 35 L 52 37 L 50 38 L 48 38 L 47 37 L 46 35 L 45 33 L 44 31 L 43 29 L 42 27 L 41 25 L 40 23 L 39 21 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* Madagascar */}
-          <path 
-            d="M 55.5 32 L 56.5 31.5 L 57 32.5 L 56.5 34 L 55.5 33.5 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Middle East */}
-          <path 
-            d="M 52 17 L 54 16.5 L 56 17 L 57 18 L 57 19 L 56 20 L 54 20 L 53 19 L 52 18 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Russia/Central Asia - improved */}
-          <path 
-            d="M 53 10 L 56 9.5 L 60 9 L 65 8.5 L 70 8 L 75 8 L 80 8.5 L 85 9 L 90 9.5 L 94 10 L 96 11 L 95 12 L 92 13 L 88 14 L 84 15 L 80 16 L 76 17 L 72 18 L 68 19 L 64 20 L 60 21 L 56 20 L 54 19 L 53 17 L 52 15 L 52 13 L 52 11 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* India */}
-          <path 
-            d="M 66 20 L 68 19.5 L 70 20 L 71 22 L 70 24 L 69 26 L 68 27 L 67 26 L 66 24 L 65 22 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* China/East Asia */}
-          <path 
-            d="M 72 14 L 75 13 L 78 13.5 L 80 14 L 82 15 L 83 16 L 82 18 L 80 19 L 78 20 L 76 20 L 74 19 L 73 18 L 72 16 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Japan - improved */}
-          <path 
-            d="M 84 13 L 85 12.5 L 86 13 L 86.5 14.5 L 86 16 L 85 17 L 84 16.5 L 83.5 15 L 83.5 14 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Southeast Asia */}
-          <path 
-            d="M 74 22 L 76 21.5 L 78 22 L 79 23 L 78 24 L 76 25 L 74 24 L 73 23 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Indonesia - improved */}
-          <path 
-            d="M 76 27 L 78 26.5 L 80 27 L 82 28 L 81 29 L 79 29.5 L 77 29 L 76 28 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          
-          {/* Philippines */}
-          <path 
-            d="M 81 24 L 82 23.5 L 82.5 24.5 L 82 25.5 L 81 25 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Australia - improved */}
-          <path 
-            d="M 80 29 L 83 28 L 86 28.5 L 89 29 L 91 30 L 92 31.5 L 91 33 L 89 34 L 87 35 L 84 35.5 L 82 35 L 80 34 L 79 32 L 79 30 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.25" strokeOpacity="0.5" fillOpacity="0.7"
-          />
-          
-          {/* New Zealand */}
-          <path 
-            d="M 89 37 L 90 36.5 L 90.5 37.5 L 90 38.5 L 89 38 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.2" strokeOpacity="0.4" fillOpacity="0.6"
-          />
-          <path 
-            d="M 90.5 39 L 91 38.5 L 91.5 39.5 L 91 40.5 L 90.5 40 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.15" strokeOpacity="0.3" fillOpacity="0.5"
-          />
-          
-          {/* Pacific Islands */}
-          <path 
-            d="M 85 26 L 86 25.5 L 86.5 26.5 L 85.5 27 Z"
-            fill="#162540" stroke="#00f2ff" strokeWidth="0.1" strokeOpacity="0.2" fillOpacity="0.4"
-          />
-        </svg>
+        {/* Grid overlay */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: 'linear-gradient(rgba(0,242,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,242,255,0.03) 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
 
-        {/* Tactical sweeping circular radar scopes */}
-        <div className="absolute w-48 h-48 rounded-full border border-brand-cyan/5 pointer-events-none flex items-center justify-center left-[10%] top-[20%] animate-pulse-soft" />
-        <div className="absolute w-72 h-72 rounded-full border border-brand-cyan/5 pointer-events-none flex items-center justify-center right-[5%] bottom-[10%] animate-pulse-soft" style={{ animationDelay: '1.5s' }} />
+        {/* Radar scan */}
+        <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-radar-scan pointer-events-none" />
 
-        {/* Central SOC Target Station Marker */}
-        <div 
-          style={{ left: `${targetX}%`, top: `${targetY}%` }}
-          className="absolute -translate-x-1/2 -translate-y-1/2 z-40 flex items-center justify-center cursor-default group"
-        >
-          <div className="absolute -inset-4 rounded-full border border-brand-cyan/45 bg-brand-cyan/5 animate-ping opacity-75" style={{ animationDuration: '4s' }} />
-          <div className="w-5 h-5 rounded-full bg-brand-bg border-2 border-brand-cyan flex items-center justify-center shadow-[0_0_12px_#00f2ff] relative z-20">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse" />
-          </div>
-          <div className="absolute left-6 bg-[#070b13]/95 border border-brand-cyan/60 text-brand-cyan text-[8px] font-mono px-1.5 py-0.5 rounded shadow whitespace-nowrap z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-            🛡️ CENTRAL SOC (EUROPE)
-          </div>
-        </div>
+        <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 w-full h-full">
+          {/* Graticules */}
+          <g stroke="#00f2ff" strokeWidth="0.4" opacity="0.07">
+            {[-60,-30,0,30,60].map(lat => {
+              const [,y] = project(0, lat);
+              return <line key={lat} x1={0} y1={y} x2={W} y2={y} />;
+            })}
+            {[-120,-60,0,60,120].map(lng => {
+              const [x] = project(lng, 0);
+              return <line key={lng} x1={x} y1={0} x2={x} y2={H} />;
+            })}
+          </g>
 
-        {/* Animated Cyber Attack Arcs */}
-        <svg viewBox="0 0 100 50" className="absolute inset-0 w-full h-full pointer-events-none z-20 overflow-visible">
-          {filteredAlerts.map((alert) => {
-            const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
-            const isHovered = hoveredAlert?.id === alert.id;
-            
-            const ctrlX = (x + targetX) / 2;
-            const ctrlY = Math.min(y, targetY) - 15;
+          {/* Country fills */}
+          {mapLoaded && countryPaths.map(({ id, d }) => (
+            <path key={id} d={d}
+              fill={heatColor(id) || '#0d1930'}
+              stroke="#00f2ff" strokeWidth="0.3" strokeOpacity="0.2"
+            />
+          ))}
 
-            const severityColors = {
-              CRITICAL: '#ff3131',
-              HIGH: '#fbbf24',
-              MEDIUM: '#00f2ff',
-              LOW: '#39ff14'
-            };
-            const strokeColor = severityColors[alert.severity] || severityColors.LOW;
+          {/* Loading / error state */}
+          {!mapLoaded && !mapError && (
+            <text x={W/2} y={H/2} textAnchor="middle" fill="#00f2ff" fontSize="14" opacity="0.4" fontFamily="monospace">
+              Cargando mapa…
+            </text>
+          )}
+          {mapError && (
+            <text x={W/2} y={H/2} textAnchor="middle" fill="#ff2d55" fontSize="12" opacity="0.6" fontFamily="monospace">
+              {mapError}
+            </text>
+          )}
+
+          {/* Threat dots */}
+          {alertsGeo.map(({ a, pos: [x, y] }, i) => {
+            const color   = THREAT_COLORS[a.level] || '#64d2ff';
+            const hovered = hoveredAlert?.id === a.id;
+            const isCrit  = a.level === 'CRITICAL';
+            const pr      = 4 + (Math.sin((pulsePhase / 100) * Math.PI * 2 + i * 0.7) + 1) * 2.5;
 
             return (
-              <g key={`arc-${alert.id}`}>
-                <path
-                  d={`M ${x} ${y} Q ${ctrlX} ${ctrlY} ${targetX} ${targetY}`}
-                  fill="none"
-                  stroke={strokeColor}
-                  strokeWidth={isHovered ? 1.0 : 0.35}
-                  className="opacity-30 transition-all duration-300"
-                />
-                
-                <path
-                  d={`M ${x} ${y} Q ${ctrlX} ${ctrlY} ${targetX} ${targetY}`}
-                  fill="none"
-                  stroke={strokeColor}
-                  strokeWidth={isHovered ? 1.5 : 0.7}
-                  className="animate-cyber-dash opacity-85 transition-all duration-300"
-                />
+              <g key={a.id} transform={`translate(${x},${y})`}
+                onMouseEnter={() => onHoverAlert(a)}
+                onMouseLeave={() => onHoverAlert(null)}
+                style={{ cursor: 'pointer' }}>
+
+                {/* Pulse ring (CRITICAL only) */}
+                {isCrit && (
+                  <circle r={pr} fill="none" stroke={color} strokeWidth="0.8"
+                    opacity={Math.max(0, 0.5 - (pr - 4) * 0.07)} />
+                )}
+
+                {/* Glow on hover */}
+                {hovered && <circle r={9} fill={color} opacity="0.15" />}
+
+                {/* Core */}
+                <circle r={hovered ? 5 : isCrit ? 3.5 : 2.5} fill={color} opacity={hovered ? 1 : 0.85} />
+                <circle r={1} fill="white" opacity="0.9" />
+
+                {/* Tooltip */}
+                {hovered && (
+                  <g transform="translate(8,-28)">
+                    <rect x={0} y={0} width={130} height={34} rx={3}
+                      fill="#0a1628" stroke={color} strokeWidth="0.8" opacity="0.97" />
+                    <text x={6} y={12} fontSize="8" fill={color} fontFamily="monospace" fontWeight="bold">
+                      {a.ip}
+                    </text>
+                    <text x={6} y={24} fontSize="6.5" fill="#94a3b8" fontFamily="monospace">
+                      {a.country} · Score {a.score} · {a.level}
+                    </text>
+                  </g>
+                )}
               </g>
             );
           })}
+
+          {/* Equator label */}
+          {mapLoaded && (() => { const [,y] = project(0,0); return (
+            <text x={6} y={y-3} fontSize="7" fill="#00f2ff" opacity="0.25" fontFamily="monospace">EQ 0°</text>
+          );})()}
         </svg>
 
-        {/* Live Threat Alert Points */}
-        {filteredAlerts.map((alert) => {
-          const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
-          const severityColors = {
-            CRITICAL: { color: 'text-brand-red', bg: 'bg-brand-red', ring: 'border-brand-red/60', pulse: 'via-brand-red' },
-            HIGH: { color: 'text-brand-yellow', bg: 'bg-brand-yellow', ring: 'border-brand-yellow/60', pulse: 'via-brand-yellow' },
-            MEDIUM: { color: 'text-brand-cyan', bg: 'bg-brand-cyan', ring: 'border-brand-cyan/50', pulse: 'via-brand-cyan' },
-            LOW: { color: 'text-brand-green', bg: 'bg-brand-green', ring: 'border-brand-green/45', pulse: 'via-brand-green' }
-          };
-          const style = severityColors[alert.severity] || severityColors.LOW;
-          const isHovered = hoveredAlert?.id === alert.id;
-
-          return (
-            <div
-              key={alert.id}
-              style={{ left: `${x}%`, top: `${y}%` }}
-              onMouseEnter={() => {
-                onHoverAlert(alert);
-                setSelectedAlertForInspection(alert);
-              }}
-              onMouseLeave={() => onHoverAlert(null)}
-              className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-30 group"
-            >
-              <div className={`absolute -inset-2.5 rounded-full bg-gradient-to-r from-transparent ${style.pulse} to-transparent opacity-40 scale-[2.2] animate-ping`} />
-              
-              <div className={`w-3 h-3 rounded-full ${style.bg} border-2 border-white relative transition-transform duration-300 ${
-                isHovered ? 'scale-150 shadow-[0_0_12px_rgba(0,242,255,0.9)]' : 'scale-100'
-              }`} />
-
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-4 hidden group-hover:block bg-[#070b13]/95 border border-brand-border text-[10px] p-2.5 rounded w-52 shadow-2xl z-50 font-mono text-zinc-300 backdrop-blur-md">
-                <div className="flex justify-between items-center border-b border-brand-border pb-1 mb-1.5">
-                  <span className={`font-bold uppercase ${style.color} text-[8px] tracking-wider`}>⚠️ {alert.severity}</span>
-                  <span className="text-[8px] text-zinc-500">{alert.timestamp}</span>
-                </div>
-                <span className="font-bold text-white block truncate text-[11px]">{alert.attackType}</span>
-                <span className="block text-zinc-400 mt-1">📟 IP Origen: {alert.sourceIp}</span>
-                <span className="block text-zinc-400">📍 Origen: {alert.country}</span>
-                <span className="block text-zinc-400">🚪 Puerto Dest: {alert.destinationPort}</span>
-                <div className="mt-1.5 pt-1.5 border-t border-brand-border/50 text-[8px] text-brand-cyan flex justify-between">
-                  <span>LAT: {alert.latitude.toFixed(2)}</span>
-                  <span>LNG: {alert.longitude.toFixed(2)}</span>
-                </div>
-              </div>
+        {/* Legend */}
+        <div className="absolute bottom-2 left-2 flex items-center gap-2 pointer-events-none">
+          {Object.entries(THREAT_COLORS).map(([lvl, col]) => (
+            <div key={lvl} className="flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full" style={{ background: col }} />
+              <span className="text-[8px] font-mono text-zinc-500">{lvl}</span>
             </div>
-          );
-        })}
-
-        {/* Heatmaps Overlay Layer */}
-        {viewHeatmap && filteredAlerts.map((alert, idx) => {
-          const { x, y } = projectCoordinates(alert.latitude, alert.longitude);
-          return (
-            <div
-              key={`heatmap-${idx}`}
-              style={{ left: `${x}%`, top: `${y}%` }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-brand-red/10 blur-xl mix-blend-screen pointer-events-none animate-pulse"
-            />
-          );
-        })}
-
-        {/* Quick Region Selector */}
-        <div className="absolute bottom-2.5 left-2.5 flex flex-wrap gap-1.5 z-40 bg-[#070b13]/90 p-1.5 border border-brand-border/60 rounded backdrop-blur">
-          {regionalCoordinates.map((reg) => (
-            <button
-              key={reg.name}
-              onClick={() => setSelectedRegion(reg.name.toUpperCase())}
-              className={`text-[8px] font-mono px-2 py-0.5 rounded transition ${
-                selectedRegion === reg.name.toUpperCase() 
-                  ? 'bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/45 font-bold shadow' 
-                  : 'text-zinc-500 hover:text-zinc-300 bg-transparent border border-transparent'
-              }`}
-            >
-              {reg.name}
-            </button>
           ))}
         </div>
-      </div>
 
-      {/* Cyber HUD Telemetry Bottom Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3.5 bg-brand-header/80 border border-brand-border rounded-lg font-mono text-zinc-300 text-xs">
-        
-        <div className="space-y-1">
-          <span className="text-[10px] text-zinc-500 font-bold tracking-wider block">ANÁLISIS DE COORDENADAS</span>
-          {selectedAlertForInspection || hoveredAlert || alerts[0] ? (
-            <div className="space-y-0.5 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-zinc-400">País Origen:</span>
-                <span className="font-bold text-white">{(selectedAlertForInspection || hoveredAlert || alerts[0]).country}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Ruta Satelital:</span>
-                <span className="text-brand-cyan font-semibold">
-                  {(selectedAlertForInspection || hoveredAlert || alerts[0]).latitude.toFixed(4)}°N, {(selectedAlertForInspection || hoveredAlert || alerts[0]).longitude.toFixed(4)}°W
-                </span>
-              </div>
-            </div>
-          ) : (
-            <span className="text-zinc-500 italic block text-[10px]">Pase el puntero sobre una IP...</span>
-          )}
-        </div>
-
-        <div className="space-y-1 border-t md:border-t-0 md:border-l border-brand-border/60 pt-2 md:pt-0 md:pl-4">
-          <span className="text-[10px] text-zinc-500 font-bold tracking-wider block">MODULACIÓN DE RED OSINT</span>
-          <div className="flex items-center gap-2 mt-1">
-            <Activity size={14} className="text-brand-green animate-pulse" />
-            <div>
-              <span className="text-[11px] text-white block">Espectro: <strong className="text-brand-green">942.85 MHz</strong></span>
-              <span className="text-[9px] text-zinc-500 block">Frecuencia de muestreo pasivo</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-1 border-t md:border-t-0 md:border-l border-brand-border/60 pt-2 md:pt-0 md:pl-4 md:col-span-2">
-          <span className="text-[10px] text-zinc-500 font-bold tracking-wider block">ACTUALIZACIÓN TÁCTICA DEL EVENTO</span>
-          {selectedAlertForInspection || hoveredAlert || alerts[0] ? (
-            <p className="text-[10px] text-zinc-400 line-clamp-2 leading-relaxed">
-              La dirección IP <strong className="text-zinc-200">{(selectedAlertForInspection || hoveredAlert || alerts[0]).sourceIp}</strong> ha iniciado un vector de asalto del tipo <strong className="text-brand-yellow">{(selectedAlertForInspection || hoveredAlert || alerts[0]).attackType}</strong> contra el rango local, mitigado de manera autónoma por la estación defensiva base.
-            </p>
-          ) : (
-            <span className="text-zinc-500 italic block text-[10px]">No hay anomalías seleccionadas para el filtrado.</span>
-          )}
+        {/* Geo counter */}
+        <div className="absolute top-2 right-2 text-[9px] font-mono text-brand-cyan/50 pointer-events-none flex items-center gap-1">
+          <Activity size={9} />
+          {alertsGeo.length}/{alerts.length} geo
         </div>
       </div>
 
-      {/* ASN Clustering Panel */}
-      <div className="border-t border-brand-border/60 pt-3">
-        <button
-          onClick={() => setShowAsn(!showAsn)}
-          className="flex items-center gap-2 text-[11px] text-zinc-400 hover:text-brand-green transition-colors mb-2"
-        >
-          <Activity size={12} className="text-brand-green" />
-          <span className="font-bold tracking-wider">TOP ASN C2 HOSTING</span>
-          <span className="text-zinc-600">{showAsn ? '▲' : '▼'}</span>
-        </button>
-        {showAsn && (
-          <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto">
-            {asnData.slice(0, 10).map((row: any, i: number) => (
-              <div key={i} className="flex items-center justify-between bg-zinc-900/60 rounded px-2 py-1 border border-brand-border/40">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[9px] text-zinc-500 font-mono w-16 shrink-0">{row.asn}</span>
-                  <span className="text-[10px] text-zinc-300 truncate">{row.org}</span>
-                  <span className="text-[9px] text-zinc-500 shrink-0">{row.country}</span>
+      {/* ── TOP ASN Panel ── */}
+      {showAsn && asnData.length > 0 && (
+        <div className="border border-brand-border/40 rounded p-3 bg-[#04080f]">
+          <h4 className="text-[10px] font-mono text-brand-cyan mb-2 flex items-center gap-1">
+            <Zap size={10} /> TOP ASN C2 HOSTING
+          </h4>
+          <div className="space-y-1.5">
+            {asnData.slice(0, 8).map((asn, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="text-[9px] font-mono text-zinc-600 w-4 shrink-0">{i + 1}</span>
+                <div className="flex-1 bg-zinc-800/50 rounded overflow-hidden h-2.5">
+                  <div className="h-full bg-gradient-to-r from-red-500/60 to-orange-500/30 transition-all"
+                    style={{ width: `${(asn.count / (asnData[0]?.count || 1)) * 100}%` }} />
                 </div>
-                <span className="text-[10px] font-bold text-brand-red shrink-0 ml-2">{row.count} C2s</span>
+                <span className="text-[9px] font-mono text-zinc-300 truncate max-w-[180px]">{asn.org}</span>
+                <span className="text-[9px] font-mono text-red-400 w-8 text-right shrink-0">{asn.count}</span>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

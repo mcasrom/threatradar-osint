@@ -76,6 +76,31 @@ export default function App() {
         })
         .catch(() => {});
     };
+    // Cargar scan_history y añadir al mapa como puntos cyan
+    fetch('/api/history', { headers: { 'Authorization': `Bearer ${localStorage.getItem('tr_token') || ''}` } })
+      .then(r => r.json())
+      .then(data => {
+        if (data.history && data.history.length > 0) {
+          const historyAlerts: ThreatAlert[] = data.history
+            .filter((s: any) => s.latitude != null && s.longitude != null)
+            .map((s: any) => ({
+              id: `scan-${s.id}`,
+              sourceIp: s.ip,
+              latitude: s.latitude,
+              longitude: s.longitude,
+              country: s.country || 'Unknown',
+              attackType: 'scan',
+              severity: 'info' as const,
+              timestamp: s.created_at,
+              source: 'ScanHistory',
+              score: s.threat_score,
+              level: s.threat_level || 'INFO',
+            }));
+          setAlerts(prev => [...prev, ...historyAlerts].slice(0, 100));
+        }
+      })
+      .catch(() => {});
+
     loadThreatMap();
     const interval = setInterval(loadThreatMap, 5 * 60 * 1000); // refresh cada 5min
     return () => clearInterval(interval);

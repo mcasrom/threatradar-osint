@@ -1511,8 +1511,8 @@ async function saveScanHistory(userId: string, plan: string, ip: string, result:
     const sdb = (await import('./src/sqlite.js')).default;
     const id  = `sh-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
     sdb.prepare(`
-      INSERT INTO scan_history (id, user_id, ip, threat_score, threat_level, country, isp, summary, sources_ok, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO scan_history (id, user_id, ip, threat_score, threat_level, country, isp, summary, sources_ok, created_at, latitude, longitude)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id, userId, ip,
       threatScore?.score ?? null,
@@ -1521,7 +1521,9 @@ async function saveScanHistory(userId: string, plan: string, ip: string, result:
       (result?.ipinfo?.org ?? '').slice(0, 80),
       threatScore?.conclusion?.summary?.slice(0, 300) ?? null,
       Object.values(result || {}).filter((v: any) => v && !v.error && typeof v === 'object').length,
-      new Date().toISOString()
+      new Date().toISOString(),
+      result?.ipinfo?.loc ? parseFloat(result.ipinfo.loc.split(',')[0]) : null,
+      result?.ipinfo?.loc ? parseFloat(result.ipinfo.loc.split(',')[1]) : null
     );
     // Purgar entradas antiguas según plan
     const cutoff = new Date(Date.now() - (RETENTION_DAYS[plan] || 7) * 86400000).toISOString();
