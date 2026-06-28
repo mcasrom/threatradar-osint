@@ -5,7 +5,6 @@ import { IPTesterAndManual } from './components/IPTesterAndManual';
 import { OSINTModulesManager } from './components/OSINTModulesManager';
 import { PremiumAIChat } from './components/PremiumAIChat';
 import { AutoReportsManager } from './components/AutoReportsManager';
-import { MonetizationPanel } from './components/MonetizationPanel';
 import { FAQs, About, Methodology, Sources } from './components/StaticInfo';
 import { AuthPanel } from './components/AuthPanel';
 import { AuditPanel } from './components/AuditPanel';
@@ -38,7 +37,7 @@ export default function App() {
 
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [hoveredAlert, setHoveredAlert] = useState<ThreatAlert | null>(null);
-  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'billing' | 'pricing' | 'docs' | 'dashboard' | 'audit' | 'legal' | 'historial'>('monitor');
+  const [activeTab, setActiveTab] = useState<'monitor' | 'osint' | 'ai-report' | 'dispatch' | 'pricing' | 'docs' | 'dashboard' | 'audit' | 'legal' | 'historial'>('monitor');
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [serverStatus, setServerStatus] = useState<any>(null);
@@ -269,14 +268,6 @@ Reportes programados por email (SMTP) y webhooks.`;
             <Mail size={14} /> Despacho Automático
           </button>
           <button
-            onClick={() => setActiveTab('billing')}
-            className={`flex-1 py-2 px-3 text-xs font-sans font-semibold rounded-md transition flex justify-center items-center gap-2 ${
-              activeTab === 'billing' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
-            }`}
-          >
-            <FileSpreadsheet size={14} /> Monetización Stripe
-          </button>
-          <button
             onClick={() => setActiveTab('dashboard')}
             className={`px-3 py-1.5 rounded text-[11px] font-sans transition ${
               activeTab === 'dashboard' ? 'bg-brand-cyan text-brand-bg shadow font-bold' : 'text-zinc-400 hover:bg-brand-panel hover:text-white'
@@ -428,9 +419,8 @@ Reportes programados por email (SMTP) y webhooks.`;
 
           {activeTab === 'dispatch' && <AutoReportsManager />}
 
-          {activeTab === 'billing' && <MonetizationPanel />}
 
-          {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('billing')} />}
+          {activeTab === 'pricing' && <PricingPage onNavigateToAuth={() => setActiveTab('dashboard')} />}
           {activeTab === 'dashboard' && <UserDashboard onNavigateToPricing={() => setActiveTab('pricing')} />}
 
 

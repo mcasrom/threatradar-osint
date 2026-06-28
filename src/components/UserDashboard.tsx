@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MonetizationPanel } from './MonetizationPanel';
 import { ShieldCheck, Zap, BarChart2, ArrowUpCircle, RefreshCw, AlertCircle, Crown, Users } from 'lucide-react';
 
 interface UserDashboardProps {
