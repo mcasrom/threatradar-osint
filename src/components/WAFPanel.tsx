@@ -33,8 +33,8 @@ const PRIORITY_ICON: Record<string, React.ReactNode> = {
   INFO:     <CheckCircle size={13} className="text-zinc-400" />,
 };
 
-export function WAFPanel() {
-  const [ip, setIp]           = useState('');
+export function WAFPanel({ initialIp }: { initialIp?: string } = {}) {
+  const [ip, setIp]           = useState(initialIp || '');
   const [result, setResult]   = useState<WAFResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');

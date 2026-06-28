@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WAFPanel } from './WAFPanel';
 import { ThreatAlert } from '../types';
 import ReactMarkdown from 'react-markdown';
 import { Globe, MapPin, Terminal, HelpCircle, ArrowRight, CheckCircle2, ShieldAlert, BookOpen, AlertCircle, RefreshCw, Zap, Copy, FileDown, Shield, Activity } from 'lucide-react';
