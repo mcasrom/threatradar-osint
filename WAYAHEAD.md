@@ -385,3 +385,40 @@ Top hallazgos iniciales: AS399486 (12 C2s), AS152194 CTG Server HK (11 C2s), Ten
 - [ ] Tabla comparativa competidores dinámica en AuditPanel
 - [ ] theHarvester test real con dominio de prueba
 - [ ] README update Sprint 15-27
+
+## ✅ Sprint 27b — Mapa D3.js + Fixes (2026-06-28)
+- [x] SimplifiedVectorMap.tsx rediseño completo con topojson-client real
+- [x] TopoJSON world-atlas@2 servido localmente en dist/assets/
+- [x] Proyección equirectangular con lat/lng precisos
+- [x] Fix antimeridiano — saltos >300px cortados
+- [x] Heatmap por país según densidad de amenazas
+- [x] Puntos animados con pulso para CRITICAL
+- [x] scan_history columnas latitude/longitude añadidas (ALTER TABLE)
+- [x] saveScanHistory guarda lat/lon desde ipinfo.loc
+- [x] IP propia aparece en mapa tras análisis OSINT
+- [x] Nginx proxy_read_timeout 300s (fix 504 en análisis largos)
+- [x] tr_token fix en App.tsx (localStorage key correcta)
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] theHarvester test real con dominio de prueba
+- [ ] nuclei/amass marcar unavailable en UI
+- [ ] README update Sprint
+
+## ✅ Sprint 27c — Módulos + UI fixes (2026-06-28)
+- [x] shodan-cli → unavailable (sin API key)
+- [x] masscan-fast → active (instalado /usr/bin/masscan)
+- [x] dnsenum → active (instalado /usr/bin/dnsenum) — ya estaba correcto
+- [x] nuclei, amass → unavailable (confirmado no instalados)
+- [x] IPTesterAndManual.tsx — copy actualizado ("GEOLOCALIZAR MI IP EN EL MAPA", textos reales)
+- [x] Nginx proxy_read_timeout 300s aplicado a threatradar
+- [x] scan_history lat/lon — ALTER TABLE + saveScanHistory actualizado
+- [x] App.tsx — tr_token fix + data.history fix (antes data.scans)
+- [x] IP propia AU visible en mapa tras análisis OSINT
+
+## 📋 Sprint 28 — Próxima sesión
+- [ ] Tabla comparativa competidores dinámica en AuditPanel
+- [ ] theHarvester test real con dominio de prueba
+- [ ] README update Sprint 15-27
+- [ ] Revisar otros textos mock/placeholder en UI
+- [ ] Manual de Operación SOC Handbook — revisar si eliminar o actualizar

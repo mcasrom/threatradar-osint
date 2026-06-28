@@ -172,7 +172,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'Shodan CLI Lookup',
         description: 'Consulta de información Shodan para IPs: puertos, servicios, vulnerabilidades.',
         version: '1.0.0',
-        status: 'active',
+        status: 'unavailable',
         commandTemplate: 'shodan host {target}',
         outputFormat: 'text',
         category: 'osint'
@@ -182,7 +182,7 @@ if (!fs.existsSync(DB_FILE)) {
         name: 'Masscan Port Sweep',
         description: 'Escaneo ultra-rápido de puertos TCP en rangos de IP completos.',
         version: '1.3.2',
-        status: 'unavailable',
+        status: 'active',
         commandTemplate: 'masscan -p1-65535 {target} --rate 10000',
         outputFormat: 'text',
         category: 'network'

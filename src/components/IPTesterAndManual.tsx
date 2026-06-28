@@ -340,15 +340,15 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           <div className="flex justify-between items-center pb-2 border-b border-brand-border/60">
             <h4 className="text-sm font-bold font-sans text-brand-cyan tracking-wider flex items-center gap-2">
               <Globe size={16} className="animate-pulse" />
-              INYECTAR MI IP Y TEST EN MAPA GEOGRÁFICO
+              GEOLOCALIZAR MI IP EN EL MAPA
             </h4>
             <span className="text-[9px] bg-brand-cyan/20 text-brand-cyan font-mono px-2 py-0.5 border border-brand-cyan/35 rounded">
-              MODO INTERACTIVO
+              LIVE
             </span>
           </div>
 
           <p className="text-zinc-400 text-xs font-sans leading-relaxed">
-            ¿Deseas probar tu propia dirección de enlace pública? Introduce tu IP o haz clic en autodetección para ubicar tu nodo en el mapamundi táctico y lanzar una simulación dedicada de contingencia.
+            Detecta tu IP pública y visualízala en el mapa de amenazas en tiempo real junto a los C2s rastreados.
           </p>
 
           <div className="space-y-2.5 pt-2">
