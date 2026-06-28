@@ -319,28 +319,50 @@ Reportes programados por email (SMTP) y webhooks.`;
         {/* Tab content */}
         <div className="space-y-6">
           {activeTab === 'monitor' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <SimplifiedVectorMap
-                  alerts={alerts}
-                  hoveredAlert={hoveredAlert}
-                  onHoverAlert={setHoveredAlert}
-                />
-                
+            <div className="space-y-6">
 
-                <IPTesterAndManual onTriggerAlert={handleTriggerAlert} />
+              {/* CTA Banner */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-brand-cyan/10 to-brand-green/5 border border-brand-cyan/30 rounded-lg px-5 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] bg-brand-red/20 text-brand-red border border-brand-red/30 rounded font-mono px-2 py-0.5 font-bold animate-pulse">LIVE</span>
+                  <span className="text-xs font-mono text-zinc-300">Plataforma de inteligencia de amenazas en tiempo real · <span className="text-brand-cyan font-bold">ThreatRadar v2.0</span></span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handlePremiumManualDownload}
+                    className="flex items-center gap-1.5 text-[10px] font-bold font-mono px-3 py-1.5 rounded border border-brand-border bg-brand-panel hover:bg-brand-border text-zinc-300 transition"
+                  >
+                    <Download size={11} />
+                    {downloadSuccess ? 'Descargado' : 'Manual v2.0'}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('pricing')}
+                    className="flex items-center gap-1.5 text-[10px] font-bold font-mono px-3 py-1.5 rounded border border-brand-cyan/50 bg-brand-cyan/10 hover:bg-brand-cyan/20 text-brand-cyan transition"
+                  >
+                    Registrarse gratis →
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-brand-panel border border-brand-border rounded-lg p-4 flex flex-col justify-between space-y-4">
-                <div className="space-y-4">
+              {/* Mapa full width */}
+              <SimplifiedVectorMap
+                alerts={alerts}
+                hoveredAlert={hoveredAlert}
+                onHoverAlert={setHoveredAlert}
+              />
+
+              {/* Feed + stats row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* REAL-TIME THREAT FEED */}
+                <div className="lg:col-span-2 bg-brand-panel border border-brand-border rounded-lg p-4 space-y-3">
                   <div className="flex justify-between items-center border-b border-brand-border pb-2">
                     <span className="text-[11px] font-bold text-zinc-400 font-mono tracking-wider">REAL-TIME THREAT FEED</span>
                     <span className="text-[9px] bg-brand-red/20 text-brand-red border border-brand-red/30 rounded font-mono px-2 py-0.5 font-bold">LIVE</span>
                   </div>
-
-                  <div className="space-y-2.5 max-h-[28rem] overflow-y-auto pr-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
                     {alerts.length === 0 ? (
-                      <div className="text-center py-8 text-zinc-500 text-xs font-mono">
+                      <div className="col-span-2 text-center py-8 text-zinc-500 text-xs font-mono">
                         <AlertOctagon size={24} className="mx-auto mb-2 opacity-50" />
                         No hay amenazas activas.<br/>
                         Usa el simulador o inyecta una IP para comenzar.
@@ -355,25 +377,18 @@ Reportes programados por email (SMTP) y webhooks.`;
                         };
                         const style = severityStyles[alt.severity] || severityStyles.LOW;
                         const isHovered = hoveredAlert?.id === alt.id;
-
                         return (
                           <div
                             key={alt.id}
-                            className={`p-3 rounded border transition ${style} ${
-                              isHovered ? 'ring-1 ring-brand-cyan' : ''
-                            }`}
+                            className={`p-3 rounded border transition ${style} ${isHovered ? 'ring-1 ring-brand-cyan' : ''}`}
                             onMouseEnter={() => setHoveredAlert(alt)}
                             onMouseLeave={() => setHoveredAlert(null)}
                           >
                             <div className="flex justify-between items-start">
                               <span className="font-mono text-[10px] text-zinc-500">{alt.timestamp}</span>
-                              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-brand-border rounded bg-brand-bg/80">
-                                PORT {alt.destinationPort}
-                              </span>
+                              <span className="text-[8px] font-bold font-mono px-1 py-0.5 border border-brand-border rounded bg-brand-bg/80">PORT {alt.destinationPort}</span>
                             </div>
-                            
                             <h4 className="text-xs font-bold text-white font-sans mt-1">{alt.attackType}</h4>
-                            
                             <div className="mt-2 flex justify-between items-center text-[10px] font-mono text-zinc-300 border-t border-brand-border/40 pt-1.5">
                               <span>SRC: {alt.sourceIp}</span>
                               <span>{alt.country}</span>
@@ -385,16 +400,45 @@ Reportes programados por email (SMTP) y webhooks.`;
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-brand-border">
-                  <button
-                    onClick={handlePremiumManualDownload}
-                    className="w-full bg-brand-header hover:bg-brand-border border border-brand-border text-brand-cyan font-sans text-xs font-bold py-2 rounded-md transition flex items-center justify-center gap-2 focus:outline-none"
-                  >
-                    <Download size={13} />
-                    {downloadSuccess ? 'Documento Descargado' : 'Descargar Manual de Usuario'}
-                  </button>
+                {/* Stats + CTA upgrade */}
+                <div className="flex flex-col gap-4">
+                  <div className="bg-brand-panel border border-brand-border rounded-lg p-4 space-y-3 flex-1">
+                    <div className="text-[11px] font-bold text-zinc-400 font-mono tracking-wider border-b border-brand-border pb-2">RESUMEN DE SESIÓN</div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span className="text-zinc-500">Amenazas detectadas</span>
+                        <span className="text-brand-red font-bold">{alerts.filter(a => a.severity === 'CRITICAL' || a.severity === 'HIGH').length}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span className="text-zinc-500">Total alertas</span>
+                        <span className="text-white font-bold">{alerts.length}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span className="text-zinc-500">Fuentes OSINT</span>
+                        <span className="text-brand-cyan font-bold">6</span>
+                      </div>
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span className="text-zinc-500">Motor IA</span>
+                        <span className="text-brand-green font-bold">Gemini + Groq</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-b from-brand-cyan/10 to-brand-green/5 border border-brand-cyan/30 rounded-lg p-4 space-y-3">
+                    <div className="text-[10px] font-bold text-brand-cyan font-mono tracking-wider">ACCESO ENTERPRISE</div>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">Análisis OSINT ilimitado, informes IA, alertas Telegram y exportación PDF.</p>
+                    <button
+                      onClick={() => setActiveTab('pricing')}
+                      className="w-full py-2 rounded border border-brand-cyan/50 bg-brand-cyan/10 hover:bg-brand-cyan/20 text-brand-cyan font-bold text-[11px] font-mono transition"
+                    >
+                      Ver planes →
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* OSINT Tester - full width below */}
+              <IPTesterAndManual onTriggerAlert={handleTriggerAlert} />
+
             </div>
           )}
 

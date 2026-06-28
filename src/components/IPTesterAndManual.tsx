@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { WAFPanel } from './WAFPanel';
+
 import { ThreatAlert } from '../types';
 import ReactMarkdown from 'react-markdown';
 import { Globe, MapPin, Terminal, HelpCircle, ArrowRight, CheckCircle2, ShieldAlert, BookOpen, AlertCircle, RefreshCw, Zap, Copy, FileDown, Shield, Activity } from 'lucide-react';
@@ -303,7 +303,7 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
       '<h2>Comandos de Mitigacion</h2>',
       ts.mitigationCommands.map((m: {label:string;cmd:string}) => '<div><div style="color:#8b949e;font-size:.7rem">' + m.label + '</div><div class="cmd">' + m.cmd + '</div></div>').join(''),
     ].join('') : '';
-    const analysisHtml = '<h2>Informe IA</h2><pre>' + analysis.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre></body></html>';
+    const escapedAnalysis = analysis.split('<').join('&lt;').split('>').join('&gt;'); const analysisHtml = '<h2>Informe IA</h2><pre>' + escapedAnalysis + '</pre></body></html>';
     const w = window.open('', '_blank');
     if (w) { w.document.write(html + scoreHtml + analysisHtml); w.document.close(); w.print(); }
   };
@@ -572,14 +572,15 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
                   ul: ({children}) => <ul className="space-y-1 mb-2 ml-2">{children}</ul>,
                   ol: ({children}) => <ol className="space-y-1 mb-2 ml-4 list-decimal">{children}</ol>,
                   li: ({children}) => <li className="flex gap-2 text-zinc-300"><span className="text-brand-cyan shrink-0 mt-0.5">•</span><span>{children}</span></li>,
-                  code: ({inline, children}: any) => inline
-                    ? <code className="bg-[#0d1117] text-green-300 px-1.5 py-0.5 rounded text-[10px] font-mono">{children}</code>
-                    : <pre className="bg-[#0d1117] border border-brand-border rounded p-3 text-[10px] font-mono text-green-300 overflow-x-auto my-2 whitespace-pre-wrap"><code>{children}</code></pre>,
-                  strong: ({children}) => <strong className="text-white font-bold">{children}</strong>,
-                  em: ({children}) => <em className="text-zinc-300 italic">{children}</em>,
-                  hr: () => <hr className="border-zinc-700 my-3" />,
-                  blockquote: ({children}) => <blockquote className="border-l-2 border-brand-cyan pl-3 text-zinc-400 italic my-2">{children}</blockquote>,
-                  a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-cyan hover:underline">{children}</a>,
+                  code: ({inline, children}: any) => {
+                    if (inline) return <code className="bg-[#0d1117] text-green-300 px-1.5 py-0.5 rounded text-[10px] font-mono">{children}</code>;
+                    return <pre className="bg-[#0d1117] border border-brand-border rounded p-3 text-[10px] font-mono text-green-300 overflow-x-auto my-2 whitespace-pre-wrap"><code>{children}</code></pre>;
+                  },
+                  strong: ({children}: any) => <strong className="text-white font-bold">{children}</strong>,
+                  em: ({children}: any) => <em className="text-zinc-300 italic">{children}</em>,
+                  hr: () => { return <hr className="border-zinc-700 my-3" />; },
+                  blockquote: ({children}: any) => <blockquote className="border-l-2 border-brand-cyan pl-3 text-zinc-400 italic my-2">{children}</blockquote>,
+                  a: ({href, children}: any) => { return <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-cyan hover:underline">{children}</a>; },
                 }}
               >
                 {aiAnalysis}
@@ -589,5 +590,6 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
         </div>
       )}
     </div>
+  </div>
   );
 };
