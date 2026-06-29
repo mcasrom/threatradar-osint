@@ -705,6 +705,32 @@ Usa los números reales. No inventes datos. No uses fechas anteriores a hoy.`;
   });
 });
 
+
+// PDF Security Assessment Report (Pro/Enterprise)
+app.post('/api/reports/pdf', authMiddleware, planMiddleware, async (req: any, res) => {
+  const { target } = req.body;
+  if (!target) return res.status(400).json({ error: 'target requerido' });
+  const clean = String(target).trim().replace(/[^a-zA-Z0-9.\-_]/g, '');
+  if (clean.length < 4) return res.status(400).json({ error: 'target invalido' });
+  const { exec } = require('child_process');
+  const fs = require('fs');
+  const path = require('path');
+  const outPdf = `/tmp/tr_${Date.now()}_${clean}.pdf`;
+  const script = path.join(process.cwd(), 'generate_report.py');
+  const env = { ...process.env, PATH: `/home/deploy/.local/bin:/home/deploy/go/bin:/usr/local/bin:/usr/bin:/bin:${process.env.PATH||''}` };
+  exec(`python3 ${script} --target ${clean} --output ${outPdf}`, { env, timeout: 300000 },
+    (err: any, stdout: string, stderr: string) => {
+      const exists = fs.existsSync(outPdf);
+      if (err || !exists) return res.status(500).json({ error: 'Error PDF', detail: stderr });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="ThreatRadar_${clean}_${new Date().toISOString().slice(0,10)}.pdf"`);
+      const stream = fs.createReadStream(outPdf);
+      stream.pipe(res);
+      stream.on('end', () => { try { fs.unlinkSync(outPdf); } catch {} });
+    }
+  );
+});
+
 app.get('/api/reports/auto-generate', (req, res) => {
   const db = readDB();
   res.json(db.logReports || []);
