@@ -53,6 +53,29 @@ def run(cmd, timeout=45):
 def is_ip(target):
     return bool(re.match(r'^\d+\.\d+\.\d+\.\d+$', target))
 
+def classify_target(target):
+    """Clasifica el objetivo y devuelve (tipo, es_analizable, mensaje)"""
+    if not is_ip(target):
+        return 'DOMINIO', True, f'Dominio publico — analisis completo disponible'
+
+    parts = list(map(int, target.split('.')))
+    a, b = parts[0], parts[1]
+
+    if a == 127:
+        return 'LOOPBACK', False, 'IP de loopback (127.x.x.x) — solo accesible localmente, sin datos OSINT externos'
+    if a == 10:
+        return 'PRIVADA', False, 'IP privada clase A (10.x.x.x) — red interna, sin datos OSINT externos. Para analisis externo usa la IP publica de tu router.'
+    if a == 172 and 16 <= b <= 31:
+        return 'PRIVADA', False, 'IP privada clase B (172.16-31.x.x) — red interna, sin datos OSINT externos.'
+    if a == 192 and b == 168:
+        return 'PRIVADA', False, 'IP privada clase C (192.168.x.x) — red interna, sin datos OSINT externos. Para analisis externo usa la IP publica de tu router.'
+    if a == 169 and b == 254:
+        return 'LINK-LOCAL', False, 'IP link-local (169.254.x.x) — autoasignada, sin conectividad externa'
+    if a >= 224:
+        return 'MULTICAST', False, 'IP multicast/reservada — no analizable con OSINT'
+
+    return 'PUBLICA', True, f'IP publica — analisis completo disponible (OSINT, reputacion, geolocalizacion)'
+
 # ── Recon functions ───────────────────────────────────────────────────────
 def scan_ports(target):
     out = run(f'nmap -sV -sC --open -T4 -p 21,22,23,25,53,80,443,445,3306,3389,8080,8443 {target} 2>&1')
@@ -273,7 +296,31 @@ def radar_svg(scores: dict) -> str:
 
 # ── HTML Report ───────────────────────────────────────────────────────────
 def build_html(target, ports, ssl_issues, subs, emails, waf, whois_info,
-               dns_info, scores, global_score, risk_level, findings, db_ctx, radar) -> str:
+               dns_info, scores, global_score, risk_level, findings, db_ctx, radar,
+               target_type='PUBLICA', target_msg='') -> str:
+
+    # Banner tipo objetivo
+    type_colors = {'PUBLICA': '#16a34a', 'DOMINIO': '#0891b2', 'PRIVADA': '#d97706',
+                   'LOOPBACK': '#64748b', 'LINK-LOCAL': '#64748b', 'MULTICAST': '#64748b'}
+    type_color = type_colors.get(target_type, '#64748b')
+    type_icons = {'PUBLICA': '🌐', 'DOMINIO': '🔗', 'PRIVADA': '🏠',
+                  'LOOPBACK': '🔄', 'LINK-LOCAL': '📡', 'MULTICAST': '📻'}
+    type_icon = type_icons.get(target_type, '❓')
+
+    target_banner = f'''
+    <div style="margin-bottom:20px;padding:10px 16px;background:{type_color}11;
+                border:1px solid {type_color}44;border-radius:6px;
+                display:flex;align-items:center;gap:10px;">
+      <span style="font-size:16px">{type_icon}</span>
+      <div>
+        <span style="color:{type_color};font-family:monospace;font-size:10px;font-weight:bold">
+          TIPO DE OBJETIVO: {target_type}
+        </span>
+        <span style="color:#64748b;font-family:monospace;font-size:10px;margin-left:10px">
+          {target_msg}
+        </span>
+      </div>
+    </div>'''
 
     now = datetime.now()
     report_id = f'TR-{now.strftime("%Y%m%d-%H%M%S")}'
@@ -395,6 +442,7 @@ def build_html(target, ports, ssl_issues, subs, emails, waf, whois_info,
 <!-- RESUMEN EJECUTIVO -->
 <h2>1. Resumen Ejecutivo</h2>
 <div class="card">
+  {target_banner}
   <p style="font-size:12px;color:#cbd5e1;line-height:1.8">
     Se ha realizado un análisis de seguridad automatizado sobre el objetivo <strong style="color:#fbbf24">{target}</strong>
     con fecha {now.strftime('%d/%m/%Y')}. El análisis cubre reconocimiento de puertos y servicios, enumeración DNS,
@@ -495,7 +543,10 @@ def main():
 
     target = args.target.strip().lower().replace('https://','').replace('http://','').rstrip('/')
 
-    print(f'[ThreatRadar] Iniciando analisis sobre: {target}')
+    target_type, is_analysable, target_msg = classify_target(target)
+
+    print(f'[ThreatRadar] Objetivo: {target}')
+    print(f'[ThreatRadar] Tipo: {target_type} — {target_msg}')
     print(f'[ThreatRadar] Informe: {args.output}')
     print()
 
@@ -506,27 +557,34 @@ def main():
     print('[2/8] Reconocimiento DNS...')
     dns_info, _ = scan_dns(target)
 
-    print('[3/8] Enumeracion de subdominios (subfinder)...')
-    subs = scan_subdomains(target)
-    print(f'      {len(subs)} subdominios')
+    # Solo ejecutar OSINT externo si es IP publica o dominio
+    if is_analysable:
+        print('[3/8] Enumeracion de subdominios (subfinder)...')
+        subs = scan_subdomains(target)
+        print(f'      {len(subs)} subdominios')
 
-    print('[4/8] Analisis SSL/TLS (sslyze)...')
-    ssl_issues, _ = scan_ssl(target)
-    print(f'      {len(ssl_issues)} problemas SSL')
+        print('[4/8] Analisis SSL/TLS (sslyze)...')
+        ssl_issues, _ = scan_ssl(target)
+        print(f'      {len(ssl_issues)} problemas SSL')
 
-    print('[5/8] Deteccion WAF (wafw00f)...')
-    waf, _ = scan_waf(target)
-    print(f'      {waf[:60]}')
+        print('[5/8] Deteccion WAF (wafw00f)...')
+        waf, _ = scan_waf(target)
+        print(f'      {waf[:60]}')
 
-    print('[6/8] OSINT emails/hosts (theHarvester)...')
-    emails = scan_harvester(target)
-    print(f'      {len(emails)} emails encontrados')
+        print('[6/8] OSINT emails/hosts (theHarvester)...')
+        emails = scan_harvester(target)
+        print(f'      {len(emails)} emails encontrados')
 
-    print('[7/8] WHOIS...')
-    whois_info, _ = scan_whois(target)
+        print('[7/8] WHOIS...')
+        whois_info, _ = scan_whois(target)
 
-    print('[8/8] Correlacion base de datos ThreatRadar...')
-    db_ctx = get_db_context(target)
+        print('[8/8] Correlacion base de datos ThreatRadar...')
+        db_ctx = get_db_context(target)
+    else:
+        print(f'[!] {target_type} detectada — omitiendo modulos OSINT externos')
+        print('[3-8/8] Solo analisis local (nmap en red interna)')
+        subs, ssl_issues, emails, whois_info, db_ctx = [], [], [], {}, {}
+        waf = 'No aplicable (objetivo de red interna)'
 
     print()
     print('[*] Calculando scores y generando informe...')
@@ -536,7 +594,8 @@ def main():
     radar    = radar_svg(scores)
     html     = build_html(target, ports, ssl_issues, subs, emails, waf,
                           whois_info, dns_info, scores, global_score,
-                          risk_level, findings, db_ctx, radar)
+                          risk_level, findings, db_ctx, radar,
+                          target_type=target_type, target_msg=target_msg)
 
     # HTML temporal
     html_path = args.output.replace('.pdf', '.html')
