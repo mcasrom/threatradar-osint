@@ -58,3 +58,5 @@ docker-compose.override.yml
 test-results/
 playwright-report/
 .env.local.secret
+__pycache__/
+*.pyc
