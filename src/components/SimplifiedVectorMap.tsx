@@ -298,6 +298,34 @@ const HotspotSticker: React.FC<{ cluster: Cluster; onClick: () => void; selected
   );
 };
 
+// __SELF_MARKER_INSTALLED__
+// ── Self location marker ("tu estas aqui") ────────────────────────────────
+interface SelfLoc { lat: number; lon: number; city: string; country: string; }
+
+const SelfMarker: React.FC<{ loc: SelfLoc }> = ({ loc }) => {
+  const [x, y] = project(loc.lon, loc.lat);
+  const label = [loc.city, loc.country].filter(Boolean).join(', ') || 'Tu ubicacion';
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <circle r={14} fill="none" stroke="#38bdf8" strokeWidth="1.2" opacity="0.5">
+        <animate attributeName="r" values="10;20;10" dur="2.5s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite" />
+      </circle>
+      <circle r={5} fill="#38bdf8" stroke="#0a1628" strokeWidth="1.5" />
+      <circle r={1.8} fill="white" />
+      <g transform="translate(8,-12)">
+        <rect x={-2} y={-9} width={Math.max(40, label.length * 5.2 + 6)} height={12}
+          rx={2} fill="#0a1628" stroke="#38bdf8" strokeWidth="0.7" opacity="0.95" />
+        <text x={Math.max(40, label.length * 5.2 + 6) / 2 - 2} y={0}
+          textAnchor="middle" fontSize="7.5" fill="#38bdf8"
+          fontFamily="monospace" fontWeight="bold">
+          TU: {label}
+        </text>
+      </g>
+    </g>
+  );
+};
+
 // ── Main Component ────────────────────────────────────────────────────────
 export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ onHoverAlert }) => {
   const [points, setPoints]           = useState<ThreatPoint[]>([]);
@@ -325,6 +353,15 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ onHoverAlert }) => 
     const id = setInterval(fetchPoints, 30_000);
     return () => clearInterval(id);
   }, [fetchPoints]);
+
+  // ── Self location (una vez al montar) ──
+  const [selfLoc, setSelfLoc] = useState<SelfLoc | null>(null);
+  useEffect(() => {
+    fetch('/api/threatmap/me')
+      .then(r => r.json())
+      .then(d => { if (d.located) setSelfLoc({ lat: d.lat, lon: d.lon, city: d.city, country: d.country }); })
+      .catch(() => {});
+  }, []);
 
   // ── Fetch ASN ──
   useEffect(() => {
@@ -498,6 +535,9 @@ export const SimplifiedVectorMap: React.FC<GeoMapProps> = ({ onHoverAlert }) => 
               onClick={() => setSelectedCluster(prev => prev === cl ? null : cl)}
             />
           ))}
+
+          {/* ── Self marker ── */}
+          {selfLoc && <SelfMarker loc={selfLoc} />}
 
           {/* ── Popup Card (sobre todo lo demás) ── */}
           {selectedCluster && (

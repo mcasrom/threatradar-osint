@@ -345,6 +345,103 @@ app.get('/api/threatmap/live', async (req, res) => {
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
+// __THREATMAP_ME_INSTALLED__
+// 0c. Visitor self-location (mapa "tu estas aqui")
+app.get('/api/threatmap/me', async (req, res) => {
+  try {
+    const xff = (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim();
+    const ip = xff || req.socket.remoteAddress || req.ip || '';
+    const clean = ip.replace('::ffff:', '');
+    if (!clean || clean === '127.0.0.1' || clean.startsWith('192.168.') || clean.startsWith('10.')) {
+      return res.json({ located: false, reason: 'private_ip' });
+    }
+    const apiKey = process.env.IPINFO_API_KEY || '';
+    const geo = await fetch(`https://ipinfo.io/${clean}?token=${apiKey}`).then((r: any) => r.json());
+    if (!geo.loc) return res.json({ located: false, reason: 'no_loc' });
+    const [lat, lon] = geo.loc.split(',').map(Number);
+    res.json({
+      located: true,
+      ip: clean,
+      lat, lon,
+      city: geo.city || '',
+      country: geo.country || '',
+      org: geo.org || '',
+      updated: new Date().toISOString(),
+    });
+  } catch (e: any) { res.status(500).json({ located: false, error: e.message }); }
+});
+
+// __SOURCES_STATUS_INSTALLED__
+// 0d. Estado en vivo de todas las fuentes OSINT (no solo si hay API key, sino si responden)
+app.get('/api/sources/status', async (req, res) => {
+  const TEST_IP = '8.8.8.8'; // target neutro, no consume cuota relevante
+  const results: Record<string, any> = {};
+
+  const check = async (name: string, hasKey: boolean, fn: () => Promise<boolean>) => {
+    if (!hasKey) { results[name] = { status: 'sin_key', active: false }; return; }
+    try {
+      const ok = await Promise.race([
+        fn(),
+        new Promise<boolean>((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000)),
+      ]);
+      results[name] = { status: ok ? 'activo' : 'error', active: ok };
+    } catch (e: any) {
+      results[name] = { status: 'error', active: false, detail: e.message };
+    }
+  };
+
+  await Promise.all([
+    check('ipinfo', !!process.env.IPINFO_API_KEY, async () => {
+      const r = await fetch(`https://ipinfo.io/${TEST_IP}?token=${process.env.IPINFO_API_KEY}`);
+      const d = await r.json();
+      return !!d.loc;
+    }),
+    check('abuseipdb', !!process.env.ABUSEIPDB_API_KEY, async () => {
+      const r = await fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${TEST_IP}&maxAgeInDays=90`,
+        { headers: { 'Key': process.env.ABUSEIPDB_API_KEY!, 'Accept': 'application/json' } });
+      return r.ok;
+    }),
+    check('virustotal', !!process.env.VIRUSTOTAL_API_KEY, async () => {
+      const r = await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${TEST_IP}`,
+        { headers: { 'x-apikey': process.env.VIRUSTOTAL_API_KEY! } });
+      return r.ok;
+    }),
+    check('greynoise', true, async () => {
+      const r = await fetch(`https://api.greynoise.io/v3/community/${TEST_IP}`,
+        { headers: process.env.GREYNOISE_API_KEY ? { key: process.env.GREYNOISE_API_KEY } : {} });
+      return r.status !== 500 && r.status !== 401;
+    }),
+    check('internetdb_shodan', true, async () => {
+      const r = await fetch(`https://internetdb.shodan.io/${TEST_IP}`);
+      return r.ok;
+    }),
+    // __THREATFOX_CHECK_FIXED__
+    check('threatfox', !!process.env.THREATFOX_API_KEY, async () => {
+      const r = await fetch('https://threatfox-api.abuse.ch/api/v1/', {
+        method: 'POST', headers: { 'Auth-Key': process.env.THREATFOX_API_KEY!, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: 'get_iocs', days: 1 }),
+      });
+      return r.ok;
+    }),
+    check('urlhaus', true, async () => {
+      const r = await fetch('https://urlhaus.abuse.ch/downloads/json_recent/');
+      return r.ok;
+    }),
+    check('groq', !!process.env.GROQ_API_KEY, async () => true),
+    check('gemini', !!process.env.GEMINI_API_KEY, async () => true),
+    check('telegram', !!process.env.TELEGRAM_BOT_TOKEN, async () => true),
+  ]);
+
+  const summary = {
+    total: Object.keys(results).length,
+    activas: Object.values(results).filter((r: any) => r.active).length,
+    sin_key: Object.values(results).filter((r: any) => r.status === 'sin_key').length,
+    con_error: Object.values(results).filter((r: any) => r.status === 'error').length,
+  };
+
+  res.json({ sources: results, summary, checked_at: new Date().toISOString() });
+});
+
 // ASN Clustering endpoint
 app.get('/api/threatmap/asn', async (req, res) => {
   try {

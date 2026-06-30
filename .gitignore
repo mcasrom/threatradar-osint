@@ -60,3 +60,8 @@ playwright-report/
 .env.local.secret
 __pycache__/
 *.pyc
+venv/
+.venv/
+*.bak
+*.bak2
+cyber_report_*.json
