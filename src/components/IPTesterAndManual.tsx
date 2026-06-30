@@ -229,8 +229,10 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     }
   };
 
-  const handleOsintFull = async () => {
-    if (!customIp) {
+  // __HANDLEOSINTFULL_PARAM_FIXED__
+  const handleOsintFull = async (overrideIp?: string) => {
+    const targetIp = overrideIp || customIp;
+    if (!targetIp) {
       setOsintError('Introduce una IP primero (usa Detectar o escribe una).');
       return;
     }
@@ -243,7 +245,7 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
     setOsintResult(null);
     setOsintError(null);
     try {
-      const res = await fetch(`/api/osint/ip-full/${customIp}`, {
+      const res = await fetch(`/api/osint/ip-full/${targetIp}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.status === 401) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
@@ -254,7 +256,7 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
       if (!res.ok) throw new Error(`Error ${res.status} del servidor.`);
       const data = await res.json();
       setOsintResult(data);
-      addLog(`Análisis OSINT completo para ${customIp} — ${Object.keys(data).filter(k => data[k] && !data[k].error && k !== 'ip' && k !== 'timestamp').length} fuentes con datos.`);
+      addLog(`Análisis OSINT completo para ${targetIp} — ${Object.keys(data).filter(k => data[k] && !data[k].error && k !== 'ip' && k !== 'timestamp').length} fuentes con datos.`);
     } catch (err: any) {
       setOsintError(err.message);
     } finally {
@@ -430,13 +432,14 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
             {customIp || '— sin IP —'}
           </span>
           <button
-            onClick={handleOsintFull}
+            onClick={() => handleOsintFull()}
             disabled={osintLoading || !customIp}
             className="ml-auto px-4 py-2 bg-gradient-to-r from-brand-cyan/30 to-brand-green/30 hover:from-brand-cyan/40 hover:to-brand-green/40 border border-brand-cyan/45 text-white font-bold text-xs rounded transition flex items-center gap-2 disabled:opacity-50 active:scale-95"
           >
             {osintLoading ? <RefreshCw size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
             {osintLoading ? 'Analizando...' : 'Lanzar Análisis OSINT'}
           </button>
+{/* __TEST_PRIVATE_BUTTON_REMOVED__ */}
         </div>
 
         {osintError && (
@@ -446,6 +449,48 @@ export const IPTesterAndManual: React.FC<IPTesterProps> = ({ onTriggerAlert }) =
           </div>
         )}
 
+        {/* __PRIVATE_IP_CARD_INSTALLED__ */}
+        {osintResult && osintResult.private_ip_detected && (
+          <div className="bg-blue-950/20 border border-blue-700/40 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2 text-blue-400">
+              <AlertCircle size={16} />
+              <span className="text-xs font-mono font-bold">IP PRIVADA DETECTADA</span>
+            </div>
+            <p className="text-[11px] text-zinc-300 font-mono leading-relaxed">
+              {osintResult.message}
+            </p>
+            <p className="text-[10px] text-zinc-500 font-mono">
+              {osintResult.guidance}
+            </p>
+            {osintResult.your_public_ip && (
+              <div className="bg-[#04080f] border border-blue-700/30 rounded p-3 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-mono">TU IP PÚBLICA REAL</div>
+                  <div className="text-sm text-blue-400 font-mono font-bold">{osintResult.your_public_ip}</div>
+                  {osintResult.your_location && (
+                    <div className="text-[10px] text-zinc-500 font-mono">
+                      {[osintResult.your_location.city, osintResult.your_location.country].filter(Boolean).join(', ')}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setCustomIp(osintResult.your_public_ip);
+                    handleOsintFull(osintResult.your_public_ip);
+                  }}
+                  className="px-3 py-2 rounded bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600/30 transition text-[10px] font-mono font-bold whitespace-nowrap"
+                >
+                  Analizar mi IP pública →
+                </button>
+              </div>
+            )}
+            {!osintResult.your_public_ip && (
+              <p className="text-[10px] text-yellow-600 font-mono">
+                {osintResult.suggestion}
+              </p>
+            )}
+          </div>
+        )}
         {osintResult && (
           <div className="space-y-2">
             <div className="text-[9px] font-mono text-zinc-500 border-b border-zinc-800 pb-1">
