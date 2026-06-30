@@ -159,6 +159,21 @@ const sanitizeTarget = (target: string): string => {
   return target.replace(/[;&|`$(){}[\]<>\\]/g, '').trim();
 };
 
+// __BLOCK_PRIVATE_MIDDLEWARE_INSTALLED__
+// Middleware reutilizable: bloquea analisis de IPs privadas/locales/servidor propio
+// en CUALQUIER endpoint que reciba :ip como parametro de ruta.
+const blockPrivateTarget = (req: any, res: any, next: any) => {
+  const raw = req.params.ip || req.params.target || '';
+  const ip = sanitizeTarget(raw);
+  if (ip === '127.0.0.1' || ip === 'localhost' || ip.startsWith('169.254.') || isPrivateIP(ip)) {
+    return res.status(403).json({
+      error: 'forbidden_target',
+      message: 'No esta permitido analizar IPs privadas, localhost ni la infraestructura propia de ThreatRadar.',
+    });
+  }
+  next();
+};
+
 // --- Threat Map DB setup ---
 (function initThreatMapTable() {
   const Database = require('better-sqlite3');
@@ -941,7 +956,7 @@ app.get('/api/user/usage', authMiddleware, (req: any, res) => {
   const limit = limits[user.plan] ?? 10;
   res.json({ email: user.email, plan: user.plan, scansUsed: used, scansLimit: limit, month: monthKey });
 });
-app.get('/api/osint/shodan/:ip', authMiddleware, async (req, res) => {
+app.get('/api/osint/shodan/:ip', authMiddleware, blockPrivateTarget, async (req, res) => {
   // InternetDB: Shodan free — ports, CVEs, tags sin API key
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP' });
@@ -955,7 +970,7 @@ app.get('/api/osint/shodan/:ip', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/osint/abuseipdb/:ip', authMiddleware, async (req, res) => {
+app.get('/api/osint/abuseipdb/:ip', authMiddleware, blockPrivateTarget, async (req, res) => {
   const apiKey = process.env.ABUSEIPDB_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'AbuseIPDB API key not configured' });
   
@@ -973,7 +988,7 @@ app.get('/api/osint/abuseipdb/:ip', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/osint/virustotal/:ip', authMiddleware, async (req, res) => {
+app.get('/api/osint/virustotal/:ip', authMiddleware, blockPrivateTarget, async (req, res) => {
   const apiKey = process.env.VIRUSTOTAL_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'VirusTotal API key not configured' });
   
@@ -1025,7 +1040,7 @@ app.get('/api/osint/hunter/:domain', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 
-app.get('/api/osint/greynoise/:ip', authMiddleware, async (req, res) => {
+app.get('/api/osint/greynoise/:ip', authMiddleware, blockPrivateTarget, async (req, res) => {
   // GreyNoise Community — funciona sin key
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP' });
@@ -1039,7 +1054,7 @@ app.get('/api/osint/greynoise/:ip', authMiddleware, async (req, res) => {
   }
 });
 
-app.get('/api/osint/ipinfo/:ip', authMiddleware, async (req, res) => {
+app.get('/api/osint/ipinfo/:ip', authMiddleware, blockPrivateTarget, async (req, res) => {
   const apiKey = process.env.IPINFO_API_KEY;
   if (!apiKey) return res.status(503).json({ error: 'IPInfo API key not configured' });
   const ip = sanitizeTarget(req.params.ip);
@@ -1399,6 +1414,37 @@ Threat hunting: que mas buscar en red interna basado en los IOCs anteriores.`;
 app.get('/api/osint/ip-full/:ip', authMiddleware, planMiddleware, async (req: any, res) => {
   const ip = sanitizeTarget(req.params.ip);
   if (!isValidIP(ip)) return res.status(400).json({ error: 'Invalid IP address' });
+
+  // __DUPLICATE_ISPRIVATEIP_REMOVED__
+  // Usa la funcion global isPrivateIP() (linea ~141), que YA incluye proteccion
+  // para 178.105.80.193 (servidor propio) y los rangos privados estandar.
+  if (isPrivateIP(ip) || ip === '127.0.0.1' || ip.startsWith('169.254.')) {
+    let myPublicIp = null;
+    let myCity = null;
+    let myCountry = null;
+    try {
+      const xff = (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim();
+      const realIp = (xff || req.socket.remoteAddress || '').replace('::ffff:', '');
+      if (realIp && !isPrivateIP(realIp)) {
+        const geo = await fetch(`https://ipinfo.io/${realIp}?token=${process.env.IPINFO_API_KEY || ''}`).then((r: any) => r.json());
+        myPublicIp = realIp;
+        myCity = geo.city || null;
+        myCountry = geo.country || null;
+      }
+    } catch {}
+    return res.json({
+      private_ip_detected: true,
+      ip,
+      message: 'Esta es una IP privada de una red local (router WiFi, smartphone, dispositivo domestico). No es visible ni analizable desde internet — por eso las fuentes OSINT no devuelven datos utiles para esta direccion.',
+      guidance: 'Si quieres analizar tu exposicion real en internet, usa tu IP publica (la que ven los servidores externos, no la de tu router).',
+      your_public_ip: myPublicIp,
+      your_location: myPublicIp ? { city: myCity, country: myCountry } : null,
+      suggestion: myPublicIp
+        ? `Prueba a analizar tu IP publica: ${myPublicIp}`
+        : 'No se pudo detectar tu IP publica automaticamente. Busca "cual es mi ip" en internet para encontrarla.',
+    });
+  }
+
   const results: any = { ip, timestamp: new Date().toISOString(), shodan: null, abuseipdb: null, virustotal: null, greynoise: null, ipinfo: null };
   await Promise.all([
     true
